@@ -9,7 +9,7 @@ Date: 2025-03-12
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 
-from ..database.queries import get_stock_list, get_stock_kline_data, get_stock_info
+from backend.database.queries import get_stock_list, get_stock_kline_data, get_stock_info
 
 
 class StockService:
@@ -28,7 +28,7 @@ class StockService:
         >>> stocks = service.get_stock_list(db, page=1, page_size=10)
     """
 
-    def get_stock_list(self, db: Session, page: int = 1, page_size: int = 20, search: str = None):
+    def get_stock_list(self, db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
         """
         获取股票列表。
 
@@ -41,7 +41,9 @@ class StockService:
         Returns:
             dict: 包含股票列表和分页信息的字典
         """
-        return get_stock_list(db, page, page_size, search)
+        # 确保search参数为字符串类型
+        search_str = str(search) if search is not None else ""
+        return get_stock_list(db, page, page_size, search_str)
 
     def get_stock_info(self, db: Session, symbol: str):
         """
@@ -62,7 +64,7 @@ class StockService:
             raise ValueError(f"Stock with symbol {symbol} not found")
         return stock_info
 
-    def get_stock_kline(self, db: Session, symbol: str, start_date: date = None, end_date: date = None):
+    def get_stock_kline(self, db: Session, symbol: str, start_date: date | None = None, end_date: date | None = None):
         """
         获取股票K线数据。
 

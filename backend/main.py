@@ -10,9 +10,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-from api.router import api_router
-from config.settings import settings
-from database.connection import engine, Base
+from backend.api.router import api_router
+from backend.config.settings import settings
+from backend.database.connection import engine, Base
 
 # 配置日志
 logging.basicConfig(

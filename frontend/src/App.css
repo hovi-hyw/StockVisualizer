@@ -1,0 +1,12 @@
+/* App.css */
+/* 应用全局样式 */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-content {
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 64px - 70px); /* 减去header和footer的高度 */
+}

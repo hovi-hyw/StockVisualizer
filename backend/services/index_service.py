@@ -9,7 +9,7 @@ Date: 2025-03-12
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 
-from ..database.queries import get_index_list, get_index_kline_data, get_index_info
+from backend.database.queries import get_index_list, get_index_kline_data, get_index_info
 
 
 class IndexService:
@@ -28,7 +28,7 @@ class IndexService:
         >>> indices = service.get_index_list(db, page=1, page_size=10)
     """
 
-    def get_index_list(self, db: Session, page: int = 1, page_size: int = 20, search: str = None):
+    def get_index_list(self, db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
         """
         获取指数列表。
 
@@ -41,7 +41,9 @@ class IndexService:
         Returns:
             dict: 包含指数列表和分页信息的字典
         """
-        return get_index_list(db, page, page_size, search)
+        # 处理搜索参数，确保传入的search不为None
+        search_param = search if search is not None else ""
+        return get_index_list(db, page, page_size, search_param)
 
     def get_index_info(self, db: Session, symbol: str):
         """
@@ -62,7 +64,7 @@ class IndexService:
             raise ValueError(f"Index with symbol {symbol} not found")
         return index_info
 
-    def get_index_kline(self, db: Session, symbol: str, start_date: date = None, end_date: date = None):
+    def get_index_kline(self, db: Session, symbol: str, start_date: date | None = None, end_date: date | None = None):
         """
         获取指数K线数据。
 

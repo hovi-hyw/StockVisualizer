@@ -11,10 +11,10 @@ from sqlalchemy.orm import Session
 from datetime import date
 from typing import Optional
 
-from ..database.connection import get_db
-from ..models.index_model import IndexList, IndexInfo, IndexKlineData
-from ..services.index_service import IndexService
-from ..utils.date_utils import parse_date
+from backend.database.connection import get_db
+from backend.models.index_model import IndexList, IndexInfo, IndexKlineData
+from backend.services.index_service import IndexService
+from backend.utils.date_utils import parse_date
 
 router = APIRouter(prefix="/indices", tags=["indices"])
 index_service = IndexService()

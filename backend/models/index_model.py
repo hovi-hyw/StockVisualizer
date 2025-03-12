@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional, List
 
-from ..database.connection import Base
+from backend.database.connection import Base
 
 
 class IndexDailyData(Base):

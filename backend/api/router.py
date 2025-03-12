@@ -8,8 +8,8 @@ Date: 2025-03-12
 
 from fastapi import APIRouter
 
-from .stock_api import router as stock_router
-from .index_api import router as index_router
+from backend.api.stock_api import router as stock_router
+from backend.api.index_api import router as index_router
 
 # 创建主路由
 api_router = APIRouter()

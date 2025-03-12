@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from ..config.settings import settings
+from backend.config.settings import settings
 
 # 创建数据库引擎
 engine = create_engine(settings.DATABASE_URL)
@@ -32,7 +32,7 @@ def get_db():
 
     Examples:
         >>> from fastapi import Depends
-        >>> from .connection import get_db
+        >>> from backend.database.connection import get_db
         >>> def my_endpoint(db: Session = Depends(get_db)):
         >>>     # 使用数据库会话
         >>>     pass

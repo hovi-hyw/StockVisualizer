@@ -9,10 +9,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, Row, Col, Statistic, Spin, message } from 'antd';
-import { LineChartOutlined, FundOutlined } from '@ant-design/icons';
+import { LineChartOutlined, FundOutlined, StockOutlined } from '@ant-design/icons';
 import KLineChart from '../components/KLineChart';
-import { getStockDetail } from '../services/stockService';
-import { getIndexDetail } from '../services/indexService';
+import { getStockInfo, getStockKline } from '../services/stockService';
+import { getIndexInfo, getIndexKline } from '../services/indexService';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { getPriceDirection } from '../utils/helpers';
 
@@ -32,9 +32,19 @@ const DetailPage = () => {
         setLoading(true);
         let response;
         if (type === 'stock') {
-          response = await getStockDetail(symbol);
+          const basicInfo = await getStockInfo(symbol);
+          const klineInfo = await getStockKline(symbol);
+          response = {
+            basic: basicInfo,
+            kline: klineInfo
+          };
         } else {
-          response = await getIndexDetail(symbol);
+          const basicInfo = await getIndexInfo(symbol);
+          const klineInfo = await getIndexKline(symbol);
+          response = {
+            basic: basicInfo,
+            kline: klineInfo
+          };
         }
         setData(response.basic);
         setKlineData(response.kline);

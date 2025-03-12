@@ -150,3 +150,41 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           type: 'candlestick',
           data: values,
           itemStyle: {
+            color: '#c23531',
+            color0: '#314656',
+            borderColor: '#c23531',
+            borderColor0: '#314656'
+          }
+        },
+        {
+          name: '成交量',
+          type: 'bar',
+          xAxisIndex: 1,
+          yAxisIndex: 1,
+          data: volumes,
+          itemStyle: {
+            color: function(params) {
+              const index = params.dataIndex;
+              const close = klineData[index].close;
+              const open = klineData[index].open;
+              return close > open ? '#c23531' : '#314656';
+            }
+          }
+        }
+      ]
+    };
+
+    // 设置图表选项
+    chartInstance.current.setOption(option);
+  }, [data, theme, title]);
+
+  return (
+    <div 
+      ref={chartRef} 
+      style={{ width: '100%', height: '500px' }}
+      className="kline-chart-container"
+    />
+  );
+};
+
+export default KLineChart;

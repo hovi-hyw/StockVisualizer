@@ -11,8 +11,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from datetime import date, timedelta
 
-from ..models.stock_model import StockData
-from ..models.index_model import IndexData
+from backend.models.stock_model import StockData
+from backend.models.index_model import IndexData
 
 
 def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str = None):

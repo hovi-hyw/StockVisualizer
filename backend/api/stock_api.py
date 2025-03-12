@@ -11,10 +11,10 @@ from sqlalchemy.orm import Session
 from datetime import date
 from typing import Optional
 
-from ..database.connection import get_db
-from ..models.stock_model import StockList, StockInfo, StockKlineData
-from ..services.stock_service import StockService
-from ..utils.date_utils import parse_date
+from backend.database.connection import get_db
+from backend.models.stock_model import StockList, StockInfo, StockKlineData
+from backend.services.stock_service import StockService
+from backend.utils.date_utils import parse_date
 
 router = APIRouter(prefix="/stocks", tags=["stocks"])
 stock_service = StockService()

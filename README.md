@@ -175,7 +175,7 @@ services:
       - backend
 
   db:
-    image: postgres:14
+    image: postgres:17
     environment:
       - POSTGRES_USER=username
       - POSTGRES_PASSWORD=password
