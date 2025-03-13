@@ -41,9 +41,20 @@ class IndexService:
         Returns:
             dict: 包含指数列表和分页信息的字典
         """
-        # 处理搜索参数，确保传入的search不为None
-        search_param = search if search is not None else ""
-        return get_index_list(db, page, page_size, search_param)
+        # 安全处理search参数
+        search_str = ""
+        if search is not None:
+            # 直接尝试转换为字符串，不管是什么类型
+            try:
+                search_str = str(search)
+                # 如果是空字符串或只包含空格，则设为空字符串
+                if not search_str.strip():
+                    search_str = ""
+            except Exception:
+                # 如果转换失败，使用空字符串
+                search_str = ""
+        
+        return get_index_list(db, page, page_size, search_str)
 
     def get_index_info(self, db: Session, symbol: str):
         """

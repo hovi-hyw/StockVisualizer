@@ -40,7 +40,9 @@ async def get_stocks(
         StockList: 股票列表和分页信息
     """
     try:
-        return stock_service.get_stock_list(db, page, page_size, search)
+        # 确保search参数是字符串类型
+        search_str = str(search) if search is not None else None
+        return stock_service.get_stock_list(db, page, page_size, search_str)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
