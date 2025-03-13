@@ -75,68 +75,34 @@ class IndexService:
             raise ValueError(f"Index with symbol {symbol} not found")
         return index_info
 
-def get_index_kline(self, db: Session, symbol: str, start_date: date | None = None, end_date: date | None = None):
-    """
-    获取指数K线数据。
+    def get_index_kline(self, db: Session, symbol: str, start_date: date | None = None, end_date: date | None = None):
+        """
+        获取指数K线数据。
 
-    Args:
-        db (Session): 数据库会话
-        symbol (str): 指数代码
-        start_date (date, optional): 开始日期，默认为一年前
-        end_date (date, optional): 结束日期，默认为今天
+        Args:
+            db (Session): 数据库会话
+            symbol (str): 指数代码
+            start_date (date, optional): 开始日期，默认为一年前
+            end_date (date, optional): 结束日期，默认为今天
 
-    Returns:
-        dict: 包含指数代码、名称和K线数据的字典
+        Returns:
+            dict: 包含指数代码、名称和K线数据的字典
 
-    Raises:
-        ValueError: 如果未找到数据
-    """
-    # 设置默认日期范围
-    if end_date is None:
-        end_date = date.today()
-    if start_date is None:
-        start_date = end_date - timedelta(days=365)
+        Raises:
+            ValueError: 如果未找到数据
+        """
+        # 调用queries.py中的函数获取K线数据
+        kline_data = get_index_kline_data(db, symbol, start_date, end_date)
 
-    query = f"""
-        SELECT 
-            date,
-            open,
-            close,
-            high,
-            low,
-            volume,
-            amount
-        FROM index_daily_data
-        WHERE symbol = :symbol
-        AND date BETWEEN :start_date AND :end_date
-        ORDER BY date ASC
-    """
+        if not kline_data:
+            raise ValueError(f"No data found for index {symbol} in the specified date range")
 
-    kline_data = db.execute(query, {"symbol": symbol, "start_date": start_date, "end_date": end_date}).fetchall()
+        # 获取指数名称
+        index_info = get_index_info(db, symbol)
+        name = index_info.get('name') if index_info else None
 
-    if not kline_data:
-        raise ValueError(f"No data found for index {symbol} in the specified date range")
-
-    # 获取指数名称
-    index_info = get_index_info(db, symbol)
-    name = index_info.get('name') if index_info else None
-
-    # 将查询结果转换为字典列表
-    kline_data_list = [
-        {
-            "date": row.date,
-            "open": row.open,
-            "close": row.close,
-            "high": row.high,
-            "low": row.low,
-            "volume": row.volume,
-            "amount": row.amount,
+        return {
+            "symbol": symbol,
+            "name": name,
+            "data": kline_data,
         }
-        for row in kline_data
-    ]
-
-    return {
-        "symbol": symbol,
-        "name": name,
-        "data": kline_data_list,
-    }

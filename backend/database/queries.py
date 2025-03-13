@@ -249,8 +249,6 @@ def get_stock_info(db: Session, symbol: str):
 
     return result.iloc[0].to_dict()
 
-
-# backend/database/queries.py (继续)
 def get_index_info(db: Session, symbol: str):
     """
     获取指数基本信息。
@@ -261,28 +259,24 @@ def get_index_info(db: Session, symbol: str):
 
     Returns:
         dict: 指数基本信息
-
-    Examples:
-        >>> from sqlalchemy.orm import Session
-        >>> def get_info(db: Session, symbol: str):
-        >>>     return get_index_info(db, symbol)
     """
     query = f"""
     SELECT symbol, name,
-           MAX(date) as latest_date,
-           first_value(open) OVER (PARTITION BY symbol ORDER BY date DESC) as open,
-           first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as close,
-           first_value(high) OVER (PARTITION BY symbol ORDER BY date DESC) as high,
-           first_value(low) OVER (PARTITION BY symbol ORDER BY date DESC) as low,
-           first_value(volume) OVER (PARTITION BY symbol ORDER BY date DESC) as volume,
-           first_value(amount) OVER (PARTITION BY symbol ORDER BY date DESC) as amount,
-           first_value(amplitude) OVER (PARTITION BY symbol ORDER BY date DESC) as amplitude,
-           first_value(change_rate) OVER (PARTITION BY symbol ORDER BY date DESC) as change_rate,
-           first_value(change_amount) OVER (PARTITION BY symbol ORDER BY date DESC) as change_amount,
-           first_value(turnover_rate) OVER (PARTITION BY symbol ORDER BY date DESC) as turnover_rate
+           date as latest_date,
+           open,
+           close,
+           high,
+           low,
+           volume,
+           amount,
+           amplitude,
+           change_rate,
+           change_amount,
+           turnover_rate
     FROM index_daily_data
     WHERE symbol = '{symbol}'
-    GROUP BY symbol, name
+    ORDER BY date DESC
+    LIMIT 1
     """
 
     result = pd.read_sql(query, db.bind)
