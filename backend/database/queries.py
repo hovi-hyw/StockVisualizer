@@ -16,43 +16,30 @@ from backend.models.index_model import IndexData
 
 
 def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
-    """
-    获取股票列表。
-
-    Args:
-        db (Session): 数据库会话
-        page (int): 页码，默认为1
-        page_size (int): 每页数量，默认为20
-        search (str, optional): 搜索关键字，可搜索股票代码或名称
-
-    Returns:
-        dict: 包含股票列表和总数的字典
-
-    Examples:
-        >>> from sqlalchemy.orm import Session
-        >>> def get_stocks(db: Session):
-        >>>     return get_stock_list(db, page=1, page_size=10)
-    """
     # 基础查询
-    query = """
+    base_query = """
     SELECT DISTINCT symbol, 
            first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
     FROM stock_daily_data
     """
-    count_query = "SELECT COUNT(DISTINCT symbol) FROM stock_daily_data"
+    count_base_query = "SELECT COUNT(DISTINCT symbol) FROM stock_daily_data"
+
+    params = {}
 
     # 添加搜索条件
     if search:
-        query += f" WHERE symbol LIKE '%{search}%'"
-        count_query += f" WHERE symbol LIKE '%{search}%'"
+        base_query += " WHERE symbol LIKE :search"
+        count_base_query += " WHERE symbol LIKE :search"
+        params['search'] = f"%{search}%"
 
     # 添加分页
     offset = (page - 1) * page_size
-    query += f" LIMIT {page_size} OFFSET {offset}"
+    query = text(base_query + f" LIMIT {page_size} OFFSET {offset}")
+    count_query = text(count_base_query)
 
     # 执行查询
-    stocks = pd.read_sql(query, db.bind)
-    total = db.execute(text(count_query)).scalar()
+    stocks = pd.read_sql(query, db.bind, params=params)
+    total = db.execute(count_query, params).scalar()
 
     return {
         "items": stocks.to_dict(orient="records"),
@@ -60,7 +47,6 @@ def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str 
         "page": page,
         "page_size": page_size
     }
-
 
 def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
     """
