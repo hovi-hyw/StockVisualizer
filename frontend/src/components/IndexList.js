@@ -1,6 +1,7 @@
 // frontend/src/components/IndexList.js
 import React, { useState, useEffect } from 'react';
-import { Table, Input, message } from 'antd';
+import { Table, Input, message, Button, Space } from 'antd';
+import { LineChartOutlined } from '@ant-design/icons';
 import { getIndexList } from '../services/indexService';
 
 const { Search } = Input;
@@ -66,7 +67,23 @@ const IndexList = () => {
       title: '最新价',
       dataIndex: 'latest_price',
       key: 'latest_price',
-      render: (text) => text ? text.toFixed(2) : '-',
+      render: (text) => (text ? text.toFixed(2) : '-'),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button
+            type="primary"
+            icon={<LineChartOutlined />}
+            size="small"
+            onClick={() => window.location.href = `/detail/index/${record.symbol}`}
+          >
+            K线图
+          </Button>
+        </Space>
+      ),
     },
   ];
 
