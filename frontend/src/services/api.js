@@ -24,6 +24,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 可以在这里添加认证token等
+    console.log('API请求:', config.url, config.params); // 添加日志记录请求信息
     return config;
   },
   (error) => {
@@ -34,12 +35,13 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
+    console.log('API响应:', response.status, response.data); // 添加日志记录响应信息
     return response.data;
   },
   (error) => {
     // 处理错误响应
     const errorMessage = error.response?.data?.detail || '请求失败';
-    console.error('API错误:', errorMessage);
+    console.error('API错误:', errorMessage, error); // 增强错误日志
     return Promise.reject(new Error(errorMessage));
   }
 );

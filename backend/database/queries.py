@@ -15,7 +15,7 @@ from backend.models.stock_model import StockData
 from backend.models.index_model import IndexData
 
 
-def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str = None):
+def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
     """
     获取股票列表。
 
@@ -62,7 +62,7 @@ def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str 
     }
 
 
-def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str = None):
+def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
     """
     获取指数列表。
 
@@ -109,7 +109,7 @@ def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str 
     }
 
 
-def get_stock_kline_data(db: Session, symbol: str, start_date: date = None, end_date: date = None):
+def get_stock_kline_data(db: Session, symbol: str, start_date: date, end_date: date):
     """
     获取股票K线数据。
 
@@ -151,7 +151,7 @@ def get_stock_kline_data(db: Session, symbol: str, start_date: date = None, end_
     result = []
     for _, row in kline_data.iterrows():
         result.append({
-            "date": row["date"].strftime("%Y-%m-%d"),
+            "date": pd.to_datetime(row["date"]).strftime("%Y-%m-%d"),
             "open": float(row["open"]),
             "close": float(row["close"]),
             "high": float(row["high"]),
@@ -242,18 +242,19 @@ def get_stock_info(db: Session, symbol: str):
     """
     query = f"""
     SELECT symbol, 
-           MAX(date) as latest_date,
-           first_value(open) OVER (PARTITION BY symbol ORDER BY date DESC) as open,
-           first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as close,
-           first_value(high) OVER (PARTITION BY symbol ORDER BY date DESC) as high,
-           first_value(low) OVER (PARTITION BY symbol ORDER BY date DESC) as low,
-           first_value(volume) OVER (PARTITION BY symbol ORDER BY date DESC) as volume,
-           first_value(amount) OVER (PARTITION BY symbol ORDER BY date DESC) as amount,
-           first_value(outstanding_share) OVER (PARTITION BY symbol ORDER BY date DESC) as outstanding_share,
-           first_value(turnover) OVER (PARTITION BY symbol ORDER BY date DESC) as turnover
+           date as latest_date,
+           open,
+           close,
+           high,
+           low,
+           volume,
+           amount,
+           outstanding_share,
+           turnover
     FROM stock_daily_data
     WHERE symbol = '{symbol}'
-    GROUP BY symbol
+    ORDER BY date DESC
+    LIMIT 1
     """
 
     result = pd.read_sql(query, db.bind)

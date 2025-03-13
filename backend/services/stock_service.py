@@ -42,7 +42,9 @@ class StockService:
             dict: 包含股票列表和分页信息的字典
         """
         # 确保search参数为字符串类型
-        search_str = str(search) if search is not None else ""
+        # 处理search参数，如果是None则设为空字符串，否则确保转换为字符串
+        # 避免直接对复杂对象使用str()，这可能导致序列化问题
+        search_str = "" if search is None else (search if isinstance(search, str) else str(search))
         return get_stock_list(db, page, page_size, search_str)
 
     def get_stock_info(self, db: Session, symbol: str):
@@ -59,7 +61,24 @@ class StockService:
         Raises:
             ValueError: 如果股票不存在
         """
+        # 尝试直接查询
         stock_info = get_stock_info(db, symbol)
+        
+        # 如果没有找到数据，尝试转换股票代码格式
+        if not stock_info:
+            # 尝试不同的股票代码格式
+            if symbol.startswith('sh') or symbol.startswith('sz') or symbol.startswith('bj'):
+                # 尝试去掉前缀
+                alt_symbol = symbol[2:]
+                stock_info = get_stock_info(db, alt_symbol)
+            else:
+                # 尝试添加前缀
+                for prefix in ['sh', 'sz', 'bj']:
+                    alt_symbol = f"{prefix}{symbol}"
+                    stock_info = get_stock_info(db, alt_symbol)
+                    if stock_info:
+                        break
+        
         if not stock_info:
             raise ValueError(f"Stock with symbol {symbol} not found")
         return stock_info

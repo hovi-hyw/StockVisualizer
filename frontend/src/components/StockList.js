@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Space, Tag, Button, message } from 'antd';
+import { Table, Input, Space, Tag, Button, message, Alert } from 'antd';
 import { SearchOutlined, LineChartOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { getStockList } from '../services/stockService';
@@ -30,10 +30,12 @@ const StockList = () => {
     total: 0,
   });
   const [searchText, setSearchText] = useState('');
+  const [error, setError] = useState(null);
 
   // 获取股票列表数据
   const fetchStockList = async (page = 1, pageSize = 20, search = '') => {
     setLoading(true);
+    setError(null);
     try {
       const response = await getStockList({
         page,
@@ -41,14 +43,23 @@ const StockList = () => {
         search,
       });
 
-      setStockData(response.items);
-      setPagination({
-        current: page,
-        pageSize,
-        total: response.total,
-      });
+      console.log('获取到的股票列表数据:', response);
+      
+      if (response && response.items) {
+        setStockData(response.items);
+        setPagination({
+          current: page,
+          pageSize,
+          total: response.total || 0,
+        });
+      } else {
+        setError('返回的数据格式不正确');
+        console.error('返回的数据格式不正确:', response);
+      }
     } catch (error) {
-      message.error('获取股票列表失败');
+      const errorMessage = error.message || '获取股票列表失败';
+      setError(errorMessage);
+      message.error(errorMessage);
       console.error('获取股票列表失败:', error);
     } finally {
       setLoading(false);
@@ -140,6 +151,17 @@ const StockList = () => {
           style={{ width: 300, marginBottom: 16 }}
         />
       </div>
+      
+      {error && (
+        <Alert 
+          message="获取数据错误" 
+          description={error}
+          type="error" 
+          showIcon 
+          style={{ marginBottom: 16 }}
+        />
+      )}
+      
       <Table
         columns={columns}
         dataSource={stockData}
