@@ -48,24 +48,8 @@ def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str 
         "page_size": page_size
     }
 
+
 def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
-    """
-    获取指数列表。
-
-    Args:
-        db (Session): 数据库会话
-        page (int): 页码，默认为1
-        page_size (int): 每页数量，默认为20
-        search (str, optional): 搜索关键字，可搜索指数代码或名称
-
-    Returns:
-        dict: 包含指数列表和总数的字典
-
-    Examples:
-        >>> from sqlalchemy.orm import Session
-        >>> def get_indices(db: Session):
-        >>>     return get_index_list(db, page=1, page_size=10)
-    """
     # 基础查询
     query = """
     SELECT DISTINCT symbol, name,
@@ -74,18 +58,21 @@ def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str 
     """
     count_query = "SELECT COUNT(DISTINCT symbol) FROM index_daily_data"
 
-    # 添加搜索条件
+    params = {}
+
+    # 添加搜索条件 - 使用参数化查询
     if search:
-        query += f" WHERE symbol LIKE '%{search}%' OR name LIKE '%{search}%'"
-        count_query += f" WHERE symbol LIKE '%{search}%' OR name LIKE '%{search}%'"
+        query += " WHERE symbol LIKE :search OR name LIKE :search"
+        count_query += " WHERE symbol LIKE :search OR name LIKE :search"
+        params['search'] = f"%{search}%"
 
     # 添加分页
     offset = (page - 1) * page_size
     query += f" LIMIT {page_size} OFFSET {offset}"
 
     # 执行查询
-    indices = pd.read_sql(query, db.bind)
-    total = db.execute(text(count_query)).scalar()
+    indices = pd.read_sql(text(query), db.bind, params=params)
+    total = db.execute(text(count_query), params=params).scalar()
 
     return {
         "items": indices.to_dict(orient="records"),
@@ -93,7 +80,6 @@ def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str 
         "page": page,
         "page_size": page_size
     }
-
 
 def get_stock_kline_data(db: Session, symbol: str, start_date: date, end_date: date):
     """

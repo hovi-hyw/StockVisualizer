@@ -203,7 +203,7 @@ volumes:
 
 3. 运行开发服务器：
    ```bash
-   uvicorn main:app --reload
+   uvicorn backend.main:app --reload
    ```
 
 ### 前端开发
