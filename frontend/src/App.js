@@ -18,7 +18,6 @@ import DetailPage from './pages/DetailPage';
 import StockKlineDemo from './pages/StockKlineDemo';
 
 // 导入布局组件
-import Header from './components/Header';
 import Footer from './components/Footer';
 
 // 导入样式
@@ -31,19 +30,21 @@ const { Content } = Layout;
  * @returns {JSX.Element} 应用主组件
  */
 function App() {
+
   return (
     <Layout className="app-layout">
-      <Header />
-      <Content className="app-content">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/stocks" element={<StockPage />} />
-          <Route path="/indices" element={<IndexPage />} />
-          <Route path="/detail/:type/:symbol" element={<DetailPage />} />
-          <Route path="/stock-kline-demo" element={<StockKlineDemo />} />
-        </Routes>
-      </Content>
-      <Footer />
+      <Layout>
+        <Content className="app-content" style={{ marginLeft: 0 }}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/stocks" element={<StockPage />} />
+            <Route path="/indices" element={<IndexPage />} />
+            <Route path="/detail/:type/:symbol" element={<DetailPage />} />
+            <Route path="/stock-kline-demo" element={<StockKlineDemo />} />
+          </Routes>
+        </Content>
+        <Footer />
+      </Layout>
     </Layout>
   );
 }

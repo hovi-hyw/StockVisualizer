@@ -8,9 +8,243 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f7fa;
+  color: #333;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* 导航栏样式 */
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: 0 !important;
+  height: 64px;
+  line-height: 64px;
+  background: linear-gradient(90deg, #001529 0%, #003a70 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.app-header .logo {
+  width: 220px;
+  height: 64px;
+  line-height: 64px;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  padding-left: 20px;
+  transition: all 0.3s ease;
+}
+
+.app-header .logo:hover {
+  transform: scale(1.02);
+}
+
+.app-header .ant-menu {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  border-bottom: none;
+}
+
+.app-header .ant-menu-item {
+  padding: 0 20px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.app-header .ant-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.app-header .ant-menu-item .anticon {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+/* 首页样式 */
+.home-page {
+  min-height: calc(100vh - 64px - 70px);
+  padding: 0;
+  background-color: #f5f7fa;
+}
+
+/* 顶部横幅区域 */
+.hero-section {
+  background: linear-gradient(135deg, #1a365d 0%, #2a4365 50%, #2c5282 100%);
+  color: white;
+  padding: 80px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"%3E%3Cpath fill="%23ffffff" fill-opacity="0.05" d="M0,288L48,272C96,256,192,224,288,197.3C384,171,480,149,576,165.3C672,181,768,235,864,250.7C960,267,1056,245,1152,224C1248,203,1344,181,1392,170.7L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"%3E%3C/path%3E%3C/svg%3E');
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-content h1 {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hero-content .ant-typography {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 20px;
+  margin-bottom: 32px;
+}
+
+/* 功能卡片区域 */
+.features-section {
+  padding: 60px 40px;
+  background-color: white;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 40px !important;
+  position: relative;
+  color: #1a365d;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #1a365d 0%, #4299e1 100%);
+  margin: 16px auto 0;
+  border-radius: 2px;
+}
+
+.feature-card {
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: none;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  font-size: 48px;
+  color: #4299e1;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.feature-card h4 {
+  color: #1a365d;
+  margin-bottom: 16px;
+}
+
+.feature-card .ant-typography {
+  color: #718096;
+  margin-bottom: 24px;
+}
+
+.feature-card .ant-btn-link {
+  color: #4299e1;
+  font-weight: 500;
+  padding-left: 0;
+}
+
+/* 市场概览区域 */
+.market-overview-section {
+  padding: 60px 40px;
+  background-color: #f8fafc;
+}
+
+.market-overview-section .ant-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  height: 100%;
+  border: none;
+}
+
+.market-overview-section .ant-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.market-overview-section .ant-statistic-title {
+  color: #4a5568;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.market-overview-section .ant-statistic-content {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 关于我们区域 */
+.about-section {
+  padding: 60px 40px;
+  background-color: white;
+  text-align: center;
+}
+
+.about-text {
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #4a5568;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 60px 20px;
+  }
+  
+  .hero-content h1 {
+    font-size: 36px;
+  }
+  
+  .hero-content .ant-typography {
+    font-size: 18px;
+  }
+  
+  .features-section,
+  .market-overview-section,
+  .about-section {
+    padding: 40px 20px;
+  }
 }
