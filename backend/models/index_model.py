@@ -101,12 +101,13 @@ class IndexInfo(BaseModel):
 
     Attributes:
         symbol (str): 指数代码
+        name (str): 指数名称
         latest_date (date): 最新数据日期
         open (float): 开盘价
         close (float): 收盘价
         high (float): 最高价
         low (float): 最低价
-        volume (int): 成交量
+        volume (float): 成交量
         amount (Optional[float]): 成交额
         amplitude (Optional[float]): 振幅
         change_rate (Optional[float]): 涨跌幅
@@ -114,12 +115,13 @@ class IndexInfo(BaseModel):
         turnover_rate (Optional[float]): 换手率
     """
     symbol: str
+    name: str
     latest_date: date
     open: float
     close: float
     high: float
     low: float
-    volume: int
+    volume: float
     amount: Optional[float] = None
     amplitude: Optional[float] = None
     change_rate: Optional[float] = None

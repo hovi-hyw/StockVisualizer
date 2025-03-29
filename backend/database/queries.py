@@ -194,6 +194,17 @@ def get_stock_info(db: Session, symbol: str):
         >>> def get_info(db: Session, symbol: str):
         >>>     return get_stock_info(db, symbol)
     """
+    # 首先从stock_info表获取股票名称
+    name_query = f"""
+    SELECT name
+    FROM stock_info
+    WHERE symbol = '{symbol}'
+    LIMIT 1
+    """
+    name_result = pd.read_sql(name_query, db.bind)
+    stock_name = name_result.iloc[0]['name'] if not name_result.empty else None
+
+    # 从daily_stock表获取最新数据
     query = f"""
     SELECT symbol, 
            date as latest_date,
@@ -215,7 +226,9 @@ def get_stock_info(db: Session, symbol: str):
     if result.empty:
         return None
 
-    return result.iloc[0].to_dict()
+    stock_info = result.iloc[0].to_dict()
+    stock_info['name'] = stock_name
+    return stock_info
 
 def get_index_info(db: Session, symbol: str):
     """
@@ -228,6 +241,17 @@ def get_index_info(db: Session, symbol: str):
     Returns:
         dict: 指数基本信息
     """
+    # 首先从index_info表获取指数名称
+    name_query = f"""
+    SELECT name
+    FROM index_info
+    WHERE symbol = '{symbol}'
+    LIMIT 1
+    """
+    name_result = pd.read_sql(name_query, db.bind)
+    index_name = name_result.iloc[0]['name'] if not name_result.empty else None
+
+    # 从daily_index表获取最新数据
     query = f"""
     SELECT symbol,
            date as latest_date,
@@ -251,4 +275,6 @@ def get_index_info(db: Session, symbol: str):
     if result.empty:
         return None
 
-    return result.iloc[0].to_dict()
+    index_info = result.iloc[0].to_dict()
+    index_info['name'] = index_name
+    return index_info

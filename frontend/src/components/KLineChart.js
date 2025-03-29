@@ -44,8 +44,16 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
 
     const klineData = data.data;
     const dates = klineData.map(item => item.date);
-    const values = klineData.map(item => [item.open, item.close, item.low, item.high]);
-    const volumes = klineData.map(item => item.volume);
+    // 确保数据按日期排序
+    const sortedData = [...klineData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    // 按照ECharts要求的顺序：[开盘价, 收盘价, 最低价, 最高价]
+    const values = sortedData.map(item => [
+      parseFloat(item.open),
+      parseFloat(item.close),
+      parseFloat(item.low),
+      parseFloat(item.high)
+    ]);
+    const volumes = sortedData.map(item => parseFloat(item.volume));
 
     const option = {
       title: {
@@ -60,13 +68,13 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
         formatter: function(params) {
           const data = params[0].data;
           return `
-            <div>
-              <p>${formatDate(params[0].axisValue)}</p>
-              <p>开盘: ${data[0]}</p>
-              <p>收盘: ${data[1]}</p>
-              <p>最低: ${data[2]}</p>
-              <p>最高: ${data[3]}</p>
-              <p>成交量: ${formatLargeNumber(volumes[params[0].dataIndex])}</p>
+            <div style="padding: 5px">
+              <p style="margin: 0">${formatDate(params[0].axisValue)}</p>
+              <p style="margin: 0">开盘: ${data[0].toFixed(2)}</p>
+              <p style="margin: 0">收盘: ${data[1].toFixed(2)}</p>
+              <p style="margin: 0">最低: ${data[2].toFixed(2)}</p>
+              <p style="margin: 0">最高: ${data[3].toFixed(2)}</p>
+              <p style="margin: 0">成交量: ${formatLargeNumber(volumes[params[0].dataIndex])}</p>
             </div>
           `;
         }

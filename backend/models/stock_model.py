@@ -93,6 +93,7 @@ class StockInfo(BaseModel):
 
     Attributes:
         symbol (str): 股票代码
+        name (str): 股票名称
         latest_date (date): 最新数据日期
         open (float): 开盘价
         close (float): 收盘价
@@ -104,6 +105,7 @@ class StockInfo(BaseModel):
         turnover (Optional[float]): 换手率
     """
     symbol: str
+    name: str
     latest_date: date
     open: float
     close: float
