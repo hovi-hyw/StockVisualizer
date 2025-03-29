@@ -101,7 +101,7 @@ StockVisualizer/
 
 ## 数据流
 
-1. 后端从 PostgreSQL 数据库读取 `stock_daily_data` 和 `index_daily_data` 表的数据
+1. 后端从 PostgreSQL 数据库读取 `daily_stock` 和 `daily_index` 表的数据
 2. 后端将数据转换为 DataFrame 进行处理
 3. 前端通过 API 请求获取数据
 4. 前端将数据渲染为列表和 K 线图
@@ -225,7 +225,7 @@ volumes:
 
 ## 注意事项
 
-- 确保 PostgreSQL 数据库中已有 `stock_daily_data` 和 `index_daily_data` 表
+- 确保 PostgreSQL 数据库中已有 `daily_stock` 和 `daily_index` 表
 - 前端开发需要 Node.js 14.0+ 环境
 - 后端开发需要 Python 3.9+ 环境
 ```

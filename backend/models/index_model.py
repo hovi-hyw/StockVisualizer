@@ -17,12 +17,11 @@ from backend.database.connection import Base
 class IndexDailyData(Base):
     """
     指数日线数据数据库模型。
-    对应数据库中的index_daily_data表。
+    对应数据库中的daily_index表。
 
     Attributes:
         symbol (str): 指数代码
         date (date): 日期
-        name (str): 指数名称
         open (float): 开盘价
         close (float): 收盘价
         high (float): 最高价
@@ -34,11 +33,10 @@ class IndexDailyData(Base):
         change_amount (float): 涨跌额
         turnover_rate (float): 换手率
     """
-    __tablename__ = "index_daily_data"
+    __tablename__ = "daily_index"
 
     symbol = Column(String, nullable=False)
     date = Column(Date, nullable=False)
-    name = Column(String(50))
     open = Column(Float)
     close = Column(Float)
     high = Column(Float)
@@ -66,7 +64,6 @@ class IndexData(BaseModel):
 
     Attributes:
         symbol (str): 指数代码
-        name (Optional[str]): 指数名称
         date (date): 日期
         open (float): 开盘价
         close (float): 收盘价
@@ -80,7 +77,6 @@ class IndexData(BaseModel):
         turnover_rate (Optional[float]): 换手率
     """
     symbol: str
-    name: Optional[str] = None
     date: date
     open: float
     close: float
@@ -105,7 +101,6 @@ class IndexInfo(BaseModel):
 
     Attributes:
         symbol (str): 指数代码
-        name (Optional[str]): 指数名称
         latest_date (date): 最新数据日期
         open (float): 开盘价
         close (float): 收盘价
@@ -119,7 +114,6 @@ class IndexInfo(BaseModel):
         turnover_rate (Optional[float]): 换手率
     """
     symbol: str
-    name: Optional[str] = None
     latest_date: date
     open: float
     close: float
@@ -157,9 +151,7 @@ class IndexKlineData(BaseModel):
 
     Attributes:
         symbol (str): 指数代码
-        name (Optional[str]): 指数名称
         data (List[dict]): K线数据列表
     """
     symbol: str
-    name: Optional[str] = None
     data: List[dict]

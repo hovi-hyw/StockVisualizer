@@ -20,9 +20,9 @@ def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str 
     base_query = """
     SELECT DISTINCT symbol, 
            first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
-    FROM stock_daily_data
+    FROM daily_stock
     """
-    count_base_query = "SELECT COUNT(DISTINCT symbol) FROM stock_daily_data"
+    count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_stock"
 
     params = {}
 
@@ -52,18 +52,18 @@ def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str 
 def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
     # 基础查询
     query = """
-    SELECT DISTINCT symbol, name,
+    SELECT DISTINCT symbol,
            first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
-    FROM index_daily_data
+    FROM daily_index
     """
-    count_query = "SELECT COUNT(DISTINCT symbol) FROM index_daily_data"
+    count_query = "SELECT COUNT(DISTINCT symbol) FROM daily_index"
 
     params = {}
 
     # 添加搜索条件 - 使用参数化查询
     if search:
-        query += " WHERE symbol LIKE :search OR name LIKE :search"
-        count_query += " WHERE symbol LIKE :search OR name LIKE :search"
+        query += " WHERE symbol LIKE :search"
+        count_query += " WHERE symbol LIKE :search"
         params['search'] = f"%{search}%"
 
     # 添加分页
@@ -111,7 +111,7 @@ def get_stock_kline_data(db: Session, symbol: str, start_date: date, end_date: d
     # 构建查询
     query = f"""
     SELECT symbol, date, open, close, high, low, volume, amount, outstanding_share, turnover
-    FROM stock_daily_data
+    FROM daily_stock
     WHERE symbol = '{symbol}' AND date BETWEEN '{start_date}' AND '{end_date}'
     ORDER BY date
     """
@@ -168,7 +168,7 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     query = f"""
     SELECT symbol, name, date, open, close, high, low, volume, amount, 
            amplitude, change_rate, change_amount, turnover_rate
-    FROM index_daily_data
+    FROM daily_index
     WHERE symbol = '{symbol}' AND date BETWEEN '{start_date}' AND '{end_date}'
     ORDER BY date
     """
@@ -223,7 +223,7 @@ def get_stock_info(db: Session, symbol: str):
            amount,
            outstanding_share,
            turnover
-    FROM stock_daily_data
+    FROM daily_stock
     WHERE symbol = '{symbol}'
     ORDER BY date DESC
     LIMIT 1
@@ -259,7 +259,7 @@ def get_index_info(db: Session, symbol: str):
            change_rate,
            change_amount,
            turnover_rate
-    FROM index_daily_data
+    FROM daily_index
     WHERE symbol = '{symbol}'
     ORDER BY date DESC
     LIMIT 1

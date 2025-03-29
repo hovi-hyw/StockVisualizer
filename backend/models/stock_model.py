@@ -17,7 +17,7 @@ from backend.database.connection import Base
 class StockDailyData(Base):
     """
     股票日线数据数据库模型。
-    对应数据库中的stock_daily_data表。
+    对应数据库中的daily_stock表。
 
     Attributes:
         symbol (str): 股票代码
@@ -31,7 +31,7 @@ class StockDailyData(Base):
         outstanding_share (float): 流通股本
         turnover (float): 换手率
     """
-    __tablename__ = "stock_daily_data"
+    __tablename__ = "daily_stock"
 
     symbol = Column(String, nullable=False)
     date = Column(Date, nullable=False)
