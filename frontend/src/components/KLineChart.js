@@ -66,15 +66,27 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           type: 'cross'
         },
         formatter: function(params) {
+          if (!params || !params[0] || !params[0].data) {
+            return '';
+          }
           const data = params[0].data;
+          const index = params[0].dataIndex;
+          
+          // 从原始数据中获取价格信息
+          const open = sortedData[index].open;
+          const close = sortedData[index].close;
+          const low = sortedData[index].low;
+          const high = sortedData[index].high;
+          const volume = sortedData[index].volume;
+
           return `
             <div style="padding: 5px">
               <p style="margin: 0">${formatDate(params[0].axisValue)}</p>
-              <p style="margin: 0">开盘: ${data[0].toFixed(2)}</p>
-              <p style="margin: 0">收盘: ${data[1].toFixed(2)}</p>
-              <p style="margin: 0">最低: ${data[2].toFixed(2)}</p>
-              <p style="margin: 0">最高: ${data[3].toFixed(2)}</p>
-              <p style="margin: 0">成交量: ${formatLargeNumber(volumes[params[0].dataIndex])}</p>
+              <p style="margin: 0">开盘: ${parseFloat(open).toFixed(2)}</p>
+              <p style="margin: 0">收盘: ${parseFloat(close).toFixed(2)}</p>
+              <p style="margin: 0">最低: ${parseFloat(low).toFixed(2)}</p>
+              <p style="margin: 0">最高: ${parseFloat(high).toFixed(2)}</p>
+              <p style="margin: 0">成交量: ${formatLargeNumber(volume)}</p>
             </div>
           `;
         }
