@@ -82,8 +82,8 @@ class IndexService:
         Args:
             db (Session): 数据库会话
             symbol (str): 指数代码
-            start_date (date, optional): 开始日期，默认为一年前
-            end_date (date, optional): 结束日期，默认为今天
+            start_date (date, optional): 开始日期，默认为None（获取所有数据）
+            end_date (date, optional): 结束日期，默认为None（获取所有数据）
 
         Returns:
             dict: 包含指数代码、名称和K线数据的字典

@@ -81,40 +81,31 @@ def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str 
         "page_size": page_size
     }
 
-def get_stock_kline_data(db: Session, symbol: str, start_date: date, end_date: date):
+def get_stock_kline_data(db: Session, symbol: str, start_date: date = None, end_date: date = None):
     """
     获取股票K线数据。
 
     Args:
         db (Session): 数据库会话
         symbol (str): 股票代码
-        start_date (date, optional): 开始日期，默认为一年前
-        end_date (date, optional): 结束日期，默认为今天
+        start_date (date, optional): 开始日期，默认为None（获取所有数据）
+        end_date (date, optional): 结束日期，默认为None（获取所有数据）
 
     Returns:
         list: 股票K线数据列表
-
-    Examples:
-        >>> from sqlalchemy.orm import Session
-        >>> from datetime import date, timedelta
-        >>> def get_kline(db: Session, symbol: str):
-        >>>     end_date = date.today()
-        >>>     start_date = end_date - timedelta(days=365)
-        >>>     return get_stock_kline_data(db, symbol, start_date, end_date)
     """
-    # 设置默认日期范围
-    if end_date is None:
-        end_date = date.today()
-    if start_date is None:
-        start_date = end_date - timedelta(days=365)
-
     # 构建查询
     query = f"""
     SELECT symbol, date, open, close, high, low, volume, amount, outstanding_share, turnover
     FROM daily_stock
-    WHERE symbol = '{symbol}' AND date BETWEEN '{start_date}' AND '{end_date}'
-    ORDER BY date
+    WHERE symbol = '{symbol}'
     """
+    
+    # 如果提供了日期范围，添加日期条件
+    if start_date and end_date:
+        query += f" AND date BETWEEN '{start_date}' AND '{end_date}'"
+    
+    query += " ORDER BY date"
 
     # 执行查询
     kline_data = pd.read_sql(query, db.bind)
@@ -123,7 +114,7 @@ def get_stock_kline_data(db: Session, symbol: str, start_date: date, end_date: d
     result = []
     for _, row in kline_data.iterrows():
         result.append({
-            "date": pd.to_datetime(row["date"]).strftime("%Y-%m-%d"),
+            "date": row["date"].strftime("%Y-%m-%d"),
             "open": float(row["open"]),
             "close": float(row["close"]),
             "high": float(row["high"]),
@@ -144,34 +135,25 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     Args:
         db (Session): 数据库会话
         symbol (str): 指数代码
-        start_date (date, optional): 开始日期，默认为一年前
-        end_date (date, optional): 结束日期，默认为今天
+        start_date (date, optional): 开始日期，默认为None（获取所有数据）
+        end_date (date, optional): 结束日期，默认为None（获取所有数据）
 
     Returns:
         list: 指数K线数据列表
-
-    Examples:
-        >>> from sqlalchemy.orm import Session
-        >>> from datetime import date, timedelta
-        >>> def get_kline(db: Session, symbol: str):
-        >>>     end_date = date.today()
-        >>>     start_date = end_date - timedelta(days=365)
-        >>>     return get_index_kline_data(db, symbol, start_date, end_date)
     """
-    # 设置默认日期范围
-    if end_date is None:
-        end_date = date.today()
-    if start_date is None:
-        start_date = end_date - timedelta(days=365)
-
     # 构建查询
     query = f"""
-    SELECT symbol, name, date, open, close, high, low, volume, amount, 
+    SELECT symbol, date, open, close, high, low, volume, amount, 
            amplitude, change_rate, change_amount, turnover_rate
     FROM daily_index
-    WHERE symbol = '{symbol}' AND date BETWEEN '{start_date}' AND '{end_date}'
-    ORDER BY date
+    WHERE symbol = '{symbol}'
     """
+    
+    # 如果提供了日期范围，添加日期条件
+    if start_date and end_date:
+        query += f" AND date BETWEEN '{start_date}' AND '{end_date}'"
+    
+    query += " ORDER BY date"
 
     # 执行查询
     kline_data = pd.read_sql(query, db.bind)
@@ -247,7 +229,7 @@ def get_index_info(db: Session, symbol: str):
         dict: 指数基本信息
     """
     query = f"""
-    SELECT symbol, name,
+    SELECT symbol,
            date as latest_date,
            open,
            close,

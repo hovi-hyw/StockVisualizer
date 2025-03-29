@@ -132,7 +132,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
         {
           type: 'inside',
           xAxisIndex: [0, 1],
-          start: 50,
+          start: 0,
           end: 100
         },
         {
@@ -140,7 +140,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           xAxisIndex: [0, 1],
           type: 'slider',
           bottom: '0%',
-          start: 50,
+          start: 0,
           end: 100
         }
       ],

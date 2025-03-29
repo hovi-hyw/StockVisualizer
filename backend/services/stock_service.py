@@ -99,8 +99,8 @@ class StockService:
         Args:
             db (Session): 数据库会话
             symbol (str): 股票代码
-            start_date (date, optional): 开始日期，默认为一年前
-            end_date (date, optional): 结束日期，默认为今天
+            start_date (date, optional): 开始日期，默认为None（获取所有数据）
+            end_date (date, optional): 结束日期，默认为None（获取所有数据）
 
         Returns:
             dict: 包含股票代码和K线数据的字典
@@ -108,12 +108,6 @@ class StockService:
         Raises:
             ValueError: 如果未找到数据
         """
-        # 设置默认日期范围
-        if end_date is None:
-            end_date = date.today()
-        if start_date is None:
-            start_date = end_date - timedelta(days=365)
-
         kline_data = get_stock_kline_data(db, symbol, start_date, end_date)
         if not kline_data:
             raise ValueError(f"No data found for stock {symbol} in the specified date range")
