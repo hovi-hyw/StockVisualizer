@@ -97,13 +97,13 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
       },
       grid: [
         {
-          left: '3%',
-          right: '3%',
+          left: '5%',
+          right: '5%',
           height: '60%'
         },
         {
-          left: '3%',
-          right: '3%',
+          left: '5%',
+          right: '5%',
           top: '75%',
           height: '15%'
         }
