@@ -37,10 +37,38 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
 
     # 数据库设置
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres:password@pgdb:5432/stockdb"
-    )
+    @staticmethod
+    def get_database_url():
+        """
+        根据运行环境自动选择正确的数据库连接字符串
+        优先使用环境变量中的配置，如果未设置则根据运行环境自动选择
+        """
+        # 从环境变量获取数据库URL
+        db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_CONNECTION_STRING")
+        if db_url:
+            return db_url
+            
+        # 如果环境变量中没有设置，则根据环境自动选择
+        # 检查是否在Docker环境中运行
+        is_docker = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
+        
+        # 获取数据库连接信息（全部从环境变量中读取，提供合理的默认值）
+        db_user = os.getenv("DB_USER", "postgres")
+        db_password = os.getenv("DB_PASSWORD", "postgres")
+        db_name = os.getenv("DB_NAME", "stock_db")
+        
+        # 根据环境选择主机名，优先使用环境变量中的配置
+        db_host = os.getenv("DB_HOST")
+        if not db_host:
+            # 如果环境变量中未设置主机名，则根据运行环境自动选择
+            if is_docker:
+                db_host = os.getenv("DB_HOST_DOCKER", "pgdb")
+            else:
+                db_host = os.getenv("DB_HOST_LOCAL", "localhost")
+            
+        return f"postgresql://{db_user}:{db_password}@{db_host}:5432/{db_name}"
+    
+    DATABASE_URL: str = get_database_url()
 
     # 日志设置
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
