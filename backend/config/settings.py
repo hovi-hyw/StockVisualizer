@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # 数据库设置
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:password@localhost:5432/stockdb"
+        "postgresql://postgres:password@pgdb:5432/stockdb"
     )
 
     # 日志设置

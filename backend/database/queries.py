@@ -95,20 +95,23 @@ def get_stock_kline_data(db: Session, symbol: str, start_date: date = None, end_
         list: 股票K线数据列表
     """
     # 构建查询
-    query = f"""
+    query = """
     SELECT symbol, date, open, close, high, low, volume, amount, outstanding_share, turnover
     FROM daily_stock
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     """
     
     # 如果提供了日期范围，添加日期条件
+    params = {"symbol": symbol}
     if start_date and end_date:
-        query += f" AND date BETWEEN '{start_date}' AND '{end_date}'"
+        query += " AND date BETWEEN :start_date AND :end_date"
+        params["start_date"] = start_date
+        params["end_date"] = end_date
     
     query += " ORDER BY date"
 
     # 执行查询
-    kline_data = pd.read_sql(query, db.bind)
+    kline_data = pd.read_sql(text(query), db.bind, params=params)
 
     # 转换为适合ECharts的格式
     result = []
@@ -150,13 +153,16 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     """
     
     # 如果提供了日期范围，添加日期条件
+    params = {"symbol": symbol}
     if start_date and end_date:
-        query += f" AND date BETWEEN '{start_date}' AND '{end_date}'"
+        query += " AND date BETWEEN :start_date AND :end_date"
+        params["start_date"] = start_date
+        params["end_date"] = end_date
     
     query += " ORDER BY date"
 
     # 执行查询
-    kline_data = pd.read_sql(query, db.bind)
+    kline_data = pd.read_sql(text(query), db.bind, params=params)
 
     # 转换为适合ECharts的格式
     result = []
@@ -195,17 +201,17 @@ def get_stock_info(db: Session, symbol: str):
         >>>     return get_stock_info(db, symbol)
     """
     # 首先从stock_info表获取股票名称
-    name_query = f"""
+    name_query = """
     SELECT name
     FROM stock_info
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     LIMIT 1
     """
-    name_result = pd.read_sql(name_query, db.bind)
+    name_result = pd.read_sql(text(name_query), db.bind, params={"symbol": symbol})
     stock_name = name_result.iloc[0]['name'] if not name_result.empty else None
 
     # 从daily_stock表获取最新数据
-    query = f"""
+    query = """
     SELECT symbol, 
            date as latest_date,
            open,
@@ -217,12 +223,12 @@ def get_stock_info(db: Session, symbol: str):
            outstanding_share,
            turnover
     FROM daily_stock
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     ORDER BY date DESC
     LIMIT 1
     """
 
-    result = pd.read_sql(query, db.bind)
+    result = pd.read_sql(text(query), db.bind, params={"symbol": symbol})
     if result.empty:
         return None
 
@@ -242,17 +248,17 @@ def get_index_info(db: Session, symbol: str):
         dict: 指数基本信息
     """
     # 首先从index_info表获取指数名称
-    name_query = f"""
+    name_query = """
     SELECT name
     FROM index_info
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     LIMIT 1
     """
-    name_result = pd.read_sql(name_query, db.bind)
+    name_result = pd.read_sql(text(name_query), db.bind, params={"symbol": symbol})
     index_name = name_result.iloc[0]['name'] if not name_result.empty else None
 
     # 从daily_index表获取最新数据
-    query = f"""
+    query = """
     SELECT symbol,
            date as latest_date,
            open,
@@ -266,12 +272,12 @@ def get_index_info(db: Session, symbol: str):
            change_amount,
            turnover_rate
     FROM daily_index
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     ORDER BY date DESC
     LIMIT 1
     """
 
-    result = pd.read_sql(query, db.bind)
+    result = pd.read_sql(text(query), db.bind, params={"symbol": symbol})
     if result.empty:
         return None
 

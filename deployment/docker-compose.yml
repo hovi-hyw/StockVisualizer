@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.backend
+    ports:
+      - "8000:8000"
+    networks:
+      - stock_network
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile.frontend
+    ports:
+      - "3000:80"
+    networks:
+      - stock_network
+
+networks:
+  stock_network:
+    external: true
