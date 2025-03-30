@@ -1,10 +1,11 @@
 # 股票数据可视化应用部署指南
 
 ## 环境要求
-- Python 3.8 或更高版本
+- Python 3.9 或更高版本
 - PostgreSQL 17 或更高版本
 - Node.js 22 或更高版本（前端需要）
 - Git
+- Docker 和 Docker Compose（推荐部署方式）
 
 ## 系统要求
 - CPU：至少 2 核
@@ -97,19 +98,45 @@ serve -s dist
 
 ### 使用 Docker（推荐）
 
-1. 构建 Docker 镜像：
+1. 确保安装了Docker和Docker Compose：
 ```bash
-# 构建后端
-docker build -t stock-visualizer-backend -f backend/Dockerfile .
+# 检查Docker版本
+docker --version
 
-# 构建前端
-docker build -t stock-visualizer-frontend -f frontend/Dockerfile .
+# 检查Docker Compose版本
+docker-compose --version
 ```
 
-2. 使用 Docker Compose 运行：
+2. 配置环境变量：
+   - 复制项目根目录下的`.env.example`文件为`.env`
+   - 根据实际情况修改环境变量，特别是数据库连接信息
+
+3. 使用Docker Compose构建和运行：
 ```bash
-docker-compose up -d
+# 构建并启动所有服务
+docker-compose up -d --build
+
+# 查看运行状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
 ```
+
+4. 访问应用：
+   - 前端：http://localhost:3000
+   - 后端API：http://localhost:8000
+   - API文档：http://localhost:8000/docs
+
+5. 停止服务：
+```bash
+docker-compose down
+```
+
+6. 常见问题：
+   - 如果遇到端口冲突，可以在`docker-compose.yml`中修改端口映射
+   - 数据库连接问题，确保在Docker环境中使用正确的主机名（通常是服务名`db`）
+   - 容器间通信问题，检查Docker网络配置
 
 ### 使用 Nginx 作为反向代理
 
