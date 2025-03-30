@@ -99,13 +99,13 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
         {
           left: '5%',
           right: '5%',
-          height: '60%'
+          height: '75%'
         },
         {
           left: '5%',
           right: '5%',
-          top: '75%',
-          height: '15%'
+          top: '80%',
+          height: '20%'
         }
       ],
       xAxis: [
@@ -201,7 +201,11 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
   return (
     <div 
       ref={chartRef} 
-      style={{ width: '100%', height: '500px' }}
+      style={{ 
+        width: '100%', 
+        height: '80vh',  // 使用视口高度单位，占据80%的视口高度
+        margin: '20px 0' // 添加一些上下边距
+      }}
       className="kline-chart-container"
     />
   );
