@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   backend:
@@ -7,10 +7,23 @@ services:
       dockerfile: deployment/Dockerfile.backend
     ports:
       - "8000:8000"
+    environment:
+      - DEBUG=False
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
     networks:
       - stock_network
     depends_on:
       - frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
 
   frontend:
     build:
@@ -20,6 +33,15 @@ services:
       - "3000:80"
     networks:
       - stock_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
 
 networks:
   stock_network:
