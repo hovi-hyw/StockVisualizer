@@ -18,7 +18,7 @@ COPY ./frontend/ ./
 RUN npm run build
 
 # 生产阶段 - 使用特定版本
-FROM nginx:1.25-alpine
+FROM nginx:1.27.4-alpine-slim
 
 # 创建非root用户
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
