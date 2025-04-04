@@ -15,71 +15,314 @@ from backend.models.stock_model import StockData
 from backend.models.index_model import IndexData
 
 
-def get_stock_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
-    # 基础查询
+def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, search: str | None = None, page: int | None = None):
+    # 优化基础查询 - 使用子查询获取最新价格，避免使用窗口函数
     base_query = """
-    SELECT DISTINCT symbol, 
-           first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
-    FROM daily_stock
+    SELECT s.symbol, s.close as latest_price
+    FROM (
+        SELECT symbol, MAX(date) as max_date
+        FROM daily_stock
+        GROUP BY symbol
+    ) latest
+    JOIN daily_stock s ON s.symbol = latest.symbol AND s.date = latest.max_date
     """
     count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_stock"
 
     params = {}
+    where_clauses = []
 
     # 添加搜索条件
     if search:
-        base_query += " WHERE symbol LIKE :search"
-        count_base_query += " WHERE symbol LIKE :search"
+        where_clauses.append("s.symbol LIKE :search")
         params['search'] = f"%{search}%"
+        # 同时更新计数查询的搜索条件
+        count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_stock WHERE symbol LIKE :search"
 
-    # 添加分页
-    offset = (page - 1) * page_size
-    query = text(base_query + f" LIMIT {page_size} OFFSET {offset}")
+    # 组合WHERE子句
+    if where_clauses and not search:  # 如果已经在search中添加了WHERE条件，则不需要再添加
+        base_query += " WHERE " + " AND ".join(where_clauses)
+        
+    # 执行计数查询 - 使用缓存变量避免重复计算
     count_query = text(count_base_query)
+    try:
+        total = db.execute(count_query, params).scalar()
+    except Exception as e:
+        print(f"计数查询错误: {e}")
+        total = 0  # 出错时提供默认值
 
-    # 执行查询
-    stocks = pd.read_sql(query, db.bind, params=params)
-    total = db.execute(count_query, params).scalar()
+    # 基于页码的分页 - 优化大页码查询性能
+    if page is not None:
+        try:
+            # 计算偏移量
+            offset = (page - 1) * page_size
+            
+            # 优化大页码查询 - 对于大于3的页码，使用子查询方式避免全表扫描
+            if page > 3:
+                # 先获取当前页的第一个symbol
+                symbol_query = f"""
+                SELECT symbol
+                FROM (
+                    SELECT DISTINCT symbol
+                    FROM daily_stock
+                    {' WHERE symbol LIKE :search' if search else ''}
+                    ORDER BY symbol ASC
+                    LIMIT 1 OFFSET {offset}
+                ) as first_symbol
+                """
+                
+                try:
+                    first_symbol_result = db.execute(text(symbol_query), params).fetchone()
+                    if first_symbol_result:
+                        first_symbol = first_symbol_result[0]
+                        # 使用symbol作为过滤条件，避免使用大的OFFSET
+                        modified_query = f"""
+                        {base_query}
+                        {' WHERE ' if not search else ' AND '} s.symbol >= :first_symbol
+                        ORDER BY s.symbol ASC LIMIT {page_size}
+                        """
+                        params['first_symbol'] = first_symbol
+                        query = text(modified_query)
+                    else:
+                        # 如果找不到第一个symbol，回退到标准查询
+                        query = text(base_query + f" ORDER BY s.symbol ASC LIMIT {page_size} OFFSET {offset}")
+                except Exception as e:
+                    print(f"获取首个symbol错误: {e}")
+                    # 出错时回退到标准查询
+                    query = text(base_query + f" ORDER BY s.symbol ASC LIMIT {page_size} OFFSET {offset}")
+            else:
+                # 对于小页码，使用标准OFFSET方式
+                query = text(base_query + f" ORDER BY s.symbol ASC LIMIT {page_size} OFFSET {offset}")
+                
+            # 执行查询
+            stocks = pd.read_sql(query, db.bind, params=params)
+        except Exception as e:
+            print(f"分页查询错误: {e}")
+            # 出错时返回空结果
+            return {
+                "items": [],
+                "total": total,
+                "page_size": page_size,
+                "current_page": page,
+                "next_page": None,
+                "prev_page": None,
+                "next_cursor": None,
+                "prev_cursor": None,
+                "error": str(e)
+            }
+        
+        # 计算下一页和上一页的页码
+        has_next = offset + page_size < total
+        has_prev = page > 1
+        
+        return {
+            "items": stocks.to_dict(orient="records"),
+            "total": total,
+            "page_size": page_size,
+            "current_page": page,
+            "next_page": page + 1 if has_next else None,
+            "prev_page": page - 1 if has_prev else None,
+            "next_cursor": None,  # 保持兼容性
+            "prev_cursor": None   # 保持兼容性
+        }
+    
+    # 基于游标的分页（保留原有功能）- 优化查询
+    else:
+        # 添加游标条件
+        if cursor:
+            try:
+                # 解码游标（格式：symbol值）
+                cursor_symbol = cursor
+                where_clauses.append("s.symbol > :cursor_symbol")
+                params['cursor_symbol'] = cursor_symbol
+                
+                # 不需要重新组合WHERE子句，使用已优化的base_query
+            except Exception as e:
+                print(f"游标解析错误: {e}")
+                # 如果游标解析失败，忽略游标条件
+                pass
 
-    return {
-        "items": stocks.to_dict(orient="records"),
-        "total": total,
-        "page": page,
-        "page_size": page_size
-    }
+        try:
+            # 添加排序和限制
+            if cursor and 'cursor_symbol' in params:
+                if where_clauses:
+                    query = text(base_query + " AND s.symbol > :cursor_symbol" + 
+                                f" ORDER BY s.symbol ASC LIMIT {page_size + 1}")
+                else:
+                    query = text(base_query + " WHERE s.symbol > :cursor_symbol" + 
+                                f" ORDER BY s.symbol ASC LIMIT {page_size + 1}")
+            else:
+                query = text(base_query + f" ORDER BY s.symbol ASC LIMIT {page_size + 1}")
+
+            # 执行查询
+            stocks = pd.read_sql(query, db.bind, params=params)
+        except Exception as e:
+            print(f"游标分页查询错误: {e}")
+            # 出错时返回空结果
+            return {
+                "items": [],
+                "total": total,
+                "page_size": page_size,
+                "next_cursor": None,
+                "prev_cursor": None,
+                "error": str(e)
+            }
+
+        # 处理游标分页
+        next_cursor = None
+        if len(stocks) > page_size:
+            next_cursor = stocks.iloc[page_size-1]['symbol']
+            stocks = stocks.iloc[:page_size]
+
+        # 计算上一页游标（如果有）
+        prev_cursor = None
+        if cursor:
+            # 获取当前页第一条记录之前的记录
+            if not stocks.empty:
+                first_symbol = stocks.iloc[0]['symbol']
+                prev_query = f"""
+                SELECT symbol
+                FROM (SELECT DISTINCT symbol FROM daily_stock
+                      WHERE symbol < :first_symbol
+                      {' AND symbol LIKE :search' if search else ''}
+                      ORDER BY symbol DESC
+                      LIMIT {page_size}) sub
+                ORDER BY symbol ASC
+                LIMIT 1
+                """
+                prev_params = {'first_symbol': first_symbol}
+                if search:
+                    prev_params['search'] = f"%{search}%"
+                prev_result = db.execute(text(prev_query), prev_params).fetchone()
+                if prev_result:
+                    prev_cursor = prev_result[0]
+
+        return {
+            "items": stocks.to_dict(orient="records"),
+            "total": total,
+            "page_size": page_size,
+            "next_cursor": next_cursor,
+            "prev_cursor": prev_cursor
+        }
 
 
-def get_index_list(db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
+def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, search: str | None = None, page: int | None = None):
     # 基础查询
-    query = """
+    base_query = """
     SELECT DISTINCT symbol,
            first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
     FROM daily_index
     """
-    count_query = "SELECT COUNT(DISTINCT symbol) FROM daily_index"
+    count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_index"
 
     params = {}
+    where_clauses = []
 
-    # 添加搜索条件 - 使用参数化查询
+    # 添加搜索条件
     if search:
-        query += " WHERE symbol LIKE :search"
-        count_query += " WHERE symbol LIKE :search"
+        where_clauses.append("symbol LIKE :search")
         params['search'] = f"%{search}%"
 
-    # 添加分页
-    offset = (page - 1) * page_size
-    query += f" LIMIT {page_size} OFFSET {offset}"
+    # 组合WHERE子句
+    if where_clauses:
+        base_query += " WHERE " + " AND ".join(where_clauses)
+        count_base_query += " WHERE " + " AND ".join(where_clauses)
 
-    # 执行查询
-    indices = pd.read_sql(text(query), db.bind, params=params)
-    total = db.execute(text(count_query), params=params).scalar()
+    # 执行计数查询 - 使用缓存变量避免重复计算
+    count_query = text(count_base_query)
+    try:
+        total = db.execute(count_query, params).scalar()
+    except Exception as e:
+        print(f"计数查询错误: {e}")
+        total = 0  # 出错时提供默认值
 
-    return {
-        "items": indices.to_dict(orient="records"),
-        "total": total,
-        "page": page,
-        "page_size": page_size
-    }
+    # 基于页码的分页
+    if page is not None:
+        # 计算偏移量
+        offset = (page - 1) * page_size
+        # 添加排序和限制
+        query = text(base_query + f" ORDER BY symbol ASC LIMIT {page_size} OFFSET {offset}")
+        # 执行查询
+        indices = pd.read_sql(query, db.bind, params=params)
+        
+        # 计算下一页和上一页的页码
+        has_next = offset + page_size < total
+        has_prev = page > 1
+        
+        return {
+            "items": indices.to_dict(orient="records"),
+            "total": total,
+            "page_size": page_size,
+            "current_page": page,
+            "next_page": page + 1 if has_next else None,
+            "prev_page": page - 1 if has_prev else None,
+            "next_cursor": None,  # 保持兼容性
+            "prev_cursor": None   # 保持兼容性
+        }
+    
+    # 基于游标的分页（保留原有功能）
+    else:
+        # 添加游标条件
+        if cursor:
+            try:
+                # 解码游标（格式：symbol值）
+                cursor_symbol = cursor
+                where_clauses.append("symbol > :cursor_symbol")
+                params['cursor_symbol'] = cursor_symbol
+                
+                # 重新组合WHERE子句
+                base_query = """
+                SELECT DISTINCT symbol,
+                       first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
+                FROM daily_index
+                """
+                if where_clauses:
+                    base_query += " WHERE " + " AND ".join(where_clauses)
+            except Exception:
+                # 如果游标解析失败，忽略游标条件
+                pass
+
+        # 添加排序和限制
+        query = text(base_query + f" ORDER BY symbol ASC LIMIT {page_size + 1}")
+
+        # 执行查询
+        indices = pd.read_sql(query, db.bind, params=params)
+
+        # 处理游标分页
+        next_cursor = None
+        if len(indices) > page_size:
+            next_cursor = indices.iloc[page_size-1]['symbol']
+            indices = indices.iloc[:page_size]
+
+        # 计算上一页游标（如果有）
+        prev_cursor = None
+        if cursor:
+            # 获取当前页第一条记录之前的记录
+            if not indices.empty:
+                first_symbol = indices.iloc[0]['symbol']
+                prev_query = f"""
+                SELECT symbol
+                FROM (SELECT DISTINCT symbol FROM daily_index
+                      WHERE symbol < :first_symbol
+                      {' AND symbol LIKE :search' if search else ''}
+                      ORDER BY symbol DESC
+                      LIMIT {page_size}) sub
+                ORDER BY symbol ASC
+                LIMIT 1
+                """
+                prev_params = {'first_symbol': first_symbol}
+                if search:
+                    prev_params['search'] = f"%{search}%"
+                prev_result = db.execute(text(prev_query), prev_params).fetchone()
+                if prev_result:
+                    prev_cursor = prev_result[0]
+
+        return {
+            "items": indices.to_dict(orient="records"),
+            "total": total,
+            "page_size": page_size,
+            "next_cursor": next_cursor,
+            "prev_cursor": prev_cursor
+        }
 
 def get_stock_kline_data(db: Session, symbol: str, start_date: date = None, end_date: date = None):
     """

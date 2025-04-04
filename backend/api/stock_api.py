@@ -22,7 +22,8 @@ stock_service = StockService()
 
 @router.get("/", response_model=StockList)
 async def get_stocks(
-        page: int = Query(1, ge=1, description="页码"),
+        cursor: Optional[str] = Query(None, description="分页游标"),
+        page: Optional[int] = Query(None, ge=1, description="页码，从1开始"),
         page_size: int = Query(20, ge=1, le=100, description="每页数量"),
         search: Optional[str] = Query(None, description="搜索关键字"),
         db: Session = Depends(get_db)
@@ -31,7 +32,8 @@ async def get_stocks(
     获取股票列表。
 
     Args:
-        page: 页码，从1开始
+        cursor: 分页游标，用于获取下一页或上一页数据
+        page: 页码，从1开始，与cursor互斥，优先使用page
         page_size: 每页数量，默认20
         search: 搜索关键字，可搜索股票代码
         db: 数据库会话
@@ -42,7 +44,7 @@ async def get_stocks(
     try:
         # 确保search参数是字符串类型
         search_str = str(search) if search is not None else None
-        return stock_service.get_stock_list(db, page, page_size, search_str)
+        return stock_service.get_stock_list(db, page_size, cursor, search_str, page)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

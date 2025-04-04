@@ -105,3 +105,4 @@ docker-compose.prod.yml
 !/docs/
 !/public/robots.txt
 frontend/package-lock.json
+package-lock.json

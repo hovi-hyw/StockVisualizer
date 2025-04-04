@@ -11,21 +11,30 @@ import api from './api';
 /**
  * 获取股票列表
  * @param {Object} params - 请求参数
- * @param {number} params.page - 页码，默认1
+ * @param {string} params.cursor - 分页游标，用于获取下一页数据
+ * @param {number} params.page - 页码，从1开始
  * @param {number} params.page_size - 每页数量，默认20
  * @param {string} params.search - 搜索关键字
+ * @param {AbortSignal} params.signal - 用于取消请求的信号
  * @returns {Promise<Object>} 股票列表数据
  */
 export const getStockList = async (params = {}) => {
-  const { page = 1, page_size = 20, search = '' } = params;
+  const { cursor, page, page_size = 20, search = '', signal } = params;
   const queryParams = {
-    page,
     page_size,
+    ...(cursor ? { cursor } : {}),
+    ...(page ? { page } : {}),
     ...(search ? { search } : {})
   };
 
   try {
-    const response = await api.get('/stocks', { params: queryParams });
+    // 添加请求配置，支持取消请求和自定义超时
+    const config = { 
+      params: queryParams,
+      ...(signal ? { signal } : {}),
+    };
+    
+    const response = await api.get('/stocks', config);
     return response;
   } catch (error) {
     console.error('获取股票列表失败:', error);

@@ -207,7 +207,7 @@ volumes:
 
 4. 启动后端服务：
    ```bash
-   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
 5. 访问API文档：

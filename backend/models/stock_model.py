@@ -125,13 +125,15 @@ class StockList(BaseModel):
     Attributes:
         items (List[dict]): 股票列表项
         total (int): 总数
-        page (int): 当前页码
         page_size (int): 每页数量
+        next_cursor (Optional[str]): 下一页游标
+        prev_cursor (Optional[str]): 上一页游标
     """
     items: List[dict]
     total: int
-    page: int
     page_size: int
+    next_cursor: Optional[str] = None
+    prev_cursor: Optional[str] = None
 
 
 class StockKlineData(BaseModel):

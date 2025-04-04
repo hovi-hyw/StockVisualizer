@@ -28,15 +28,16 @@ class StockService:
         >>> stocks = service.get_stock_list(db, page=1, page_size=10)
     """
 
-    def get_stock_list(self, db: Session, page: int = 1, page_size: int = 20, search: str | None = None):
+    def get_stock_list(self, db: Session, page_size: int = 20, cursor: str | None = None, search: str | None = None, page: int | None = None):
         """
         获取股票列表。
 
         Args:
             db (Session): 数据库会话
-            page (int): 页码，默认为1
             page_size (int): 每页数量，默认为20
+            cursor (str, optional): 分页游标，用于获取下一页数据
             search (str, optional): 搜索关键字
+            page (int, optional): 页码，从1开始，与cursor互斥，优先使用page
 
         Returns:
             dict: 包含股票列表和分页信息的字典
@@ -54,7 +55,7 @@ class StockService:
                 # 如果转换失败，使用空字符串
                 search_str = ""
         
-        return get_stock_list(db, page, page_size, search_str)
+        return get_stock_list(db, page_size, cursor, search_str, page)
 
     def get_stock_info(self, db: Session, symbol: str):
         """

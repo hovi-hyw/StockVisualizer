@@ -11,16 +11,18 @@ import api from './api';
 /**
  * 获取指数列表
  * @param {Object} params - 请求参数
- * @param {number} params.page - 页码，默认1
+ * @param {string} params.cursor - 分页游标，用于获取下一页数据
+ * @param {number} params.page - 页码，从1开始
  * @param {number} params.page_size - 每页数量，默认20
  * @param {string} params.search - 搜索关键字
  * @returns {Promise<Object>} 指数列表数据
  */
 export const getIndexList = async (params = {}) => {
-  const { page = 1, page_size = 20, search = '' } = params;
+  const { cursor, page, page_size = 20, search = '' } = params;
   const queryParams = {
-    page,
     page_size,
+    ...(cursor ? { cursor } : {}),
+    ...(page ? { page } : {}),
     ...(search ? { search } : {})
   };
 
