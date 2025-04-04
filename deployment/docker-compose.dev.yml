@@ -1,3 +1,4 @@
+# 开发环境专用的docker-compose配置
 version: '3.8'
 
 services:
@@ -8,8 +9,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True  # 开发环境设置为True
-      - LOG_LEVEL=DEBUG  # 开发环境使用DEBUG日志级别
+      - DEBUG=True
+      - LOG_LEVEL=DEBUG
       - PYTHONUNBUFFERED=1
     volumes:
       - ../backend:/app/backend  # 挂载本地后端代码到容器
@@ -37,6 +38,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true  # 在某些环境下需要启用轮询以检测文件变化
       - WDS_SOCKET_PORT=3000  # WebSocket端口设置
+      - REACT_APP_API_URL=http://localhost:8001  # API地址更新为新的后端端口
     networks:
       - stock_network
     restart: unless-stopped

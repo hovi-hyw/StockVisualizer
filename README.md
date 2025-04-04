@@ -79,7 +79,6 @@ StockVisualizer/
 │       ├── App.js            # 应用入口
 │       └── index.js          # 主入口文件
 │
-├── docs/                     # 文档
 ├── deployment/               # 部署配置
 └── README.md                 # 项目说明
 ```
@@ -116,6 +115,13 @@ GET /api/stocks/{symbol}      # 获取单只股票基本信息
 GET /api/stocks/{symbol}/kline # 获取股票 K 线数据
 ```
 
+**参数说明**
+- `page`: 页码，默认为1
+- `page_size`: 每页数量，默认为20，最大为100
+- `search`: 搜索关键字，可搜索股票代码或名称
+- `start_date`: 开始日期（YYYY-MM-DD），可选
+- `end_date`: 结束日期（YYYY-MM-DD），可选
+
 ### 指数 API
 
 ```
@@ -124,103 +130,190 @@ GET /api/indices/{symbol}     # 获取单个指数基本信息
 GET /api/indices/{symbol}/kline # 获取指数 K 线数据
 ```
 
-## 实施步骤
+**参数说明**
+- `page`: 页码，默认为1
+- `page_size`: 每页数量，默认为20，最大为100
+- `search`: 搜索关键字，可搜索指数代码或名称
+- `start_date`: 开始日期（YYYY-MM-DD），可选
+- `end_date`: 结束日期（YYYY-MM-DD），可选
 
-1. **环境设置**
-   - 安装 Python 和 Node.js
-   - 设置 PostgreSQL 数据库连接
+## 环境要求
 
-2. **后端开发**
-   - 实现数据库连接和查询
-   - 开发 API 接口
-   - 实现数据处理逻辑
+- Python 3.9 或更高版本
+- PostgreSQL 17 或更高版本
+- Node.js 22 或更高版本（前端需要）
+- Docker 和 Docker Compose（推荐部署方式）
 
-3. **前端开发**
-   - 实现股票/指数列表组件
-   - 实现 K 线图组件
-   - 整合前端页面
+### 系统要求
+- CPU：至少 2 核
+- 内存：至少 4GB
+- 存储空间：至少 20GB
+- 操作系统：Linux/Windows Server 2019 或更高版本
 
-4. **测试和部署**
-   - 单元测试和集成测试
-   - Docker 容器化
-   - 部署到生产环境
+## 环境配置
 
-## 部署方案
+### 环境变量配置
 
-系统支持通过 Docker 和 Docker Compose 进行部署：
+系统支持在不同环境（本地开发、Docker容器、生产环境）之间无缝切换，通过自动环境检测功能简化配置过程。
 
-```yaml
-# docker-compose.yml 示例
-version: '3'
+#### 自动环境检测功能
 
-services:
-  backend:
-    build:
-      context: .
-      dockerfile: deployment/Dockerfile.backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://username:password@db:5432/stockdb
-    depends_on:
-      - db
+系统会通过以下方式检测当前的运行环境：
 
-  frontend:
-    build:
-      context: .
-      dockerfile: deployment/Dockerfile.frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+1. 检查是否存在`/.dockerenv`文件（Docker容器内部特有的文件）
+2. 检查环境变量`DOCKER_CONTAINER`是否设置为`true`
 
-  db:
-    image: postgres:17
-    environment:
-      - POSTGRES_USER=username
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=stockdb
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+根据检测结果：
+- 如果在Docker环境中运行，将使用`pgdb`作为数据库主机名
+- 如果在本地环境中运行，将使用`localhost`作为数据库主机名
 
-volumes:
-  pgdata:
+#### 配置方法
+
+1. 复制项目根目录下的`.env.example`文件为`.env`：
+   ```bash
+   cp .env.example .env
+   ```
+
+2. 编辑`.env`文件，设置以下环境变量：
+   ```env
+   # 数据库连接信息
+   DB_USER=DB_USER
+   DB_PASSWORD=DB_PASSWORD
+   DB_NAME=stock_db
+   DB_PORT=5432
+   
+   # API配置
+   API_HOST=0.0.0.0
+   API_PORT=8000
+   DEBUG=True
+   
+   # 日志级别
+   LOG_LEVEL=INFO
+   
+   # 前端API基础URL（用于前端开发）
+   REACT_APP_API_BASE_URL=http://localhost:8000/api
+   ```
+
+## 开发环境配置
+
+我们提供了两种开发环境配置方式：使用Docker容器化环境和本地直接运行。两种方式都支持代码热重载，方便开发和调试。
+
+### 使用Docker开发（推荐）
+
+#### 前提条件
+
+- 安装 [Docker](https://www.docker.com/get-started)
+- 安装 [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### 启动开发环境
+
+在项目根目录下运行以下命令：
+
+```bash
+# 使用开发环境配置启动
+docker-compose -f deployment/docker-compose.dev.yml up
 ```
 
-## 开发指南
+这将启动：
+- 前端开发服务器 (React) - 访问 http://localhost:3000
+- 后端API服务器 (FastAPI) - 访问 http://localhost:8000
 
-### 后端开发
+#### 代码实时更新
+
+开发环境配置已经设置了卷挂载，当你修改本地代码时：
+
+- **前端代码**：React开发服务器会自动检测变化并重新编译，浏览器会自动刷新
+- **后端代码**：uvicorn服务器使用`--reload`参数，会自动检测Python文件变化并重启服务
+
+#### 开发环境注意事项
+
+1. **首次构建**：首次启动可能需要较长时间，因为需要安装所有依赖
+
+   ```bash
+   # 强制重新构建镜像
+   docker-compose -f deployment/docker-compose.dev.yml up --build
+   ```
+
+2. **依赖管理**：
+   - 如果添加了新的前端依赖，需要重新构建前端容器
+   - 如果添加了新的后端依赖，需要更新`requirements.txt`并重新构建后端容器
+
+3. **环境变量**：
+   - 开发环境使用项目根目录下的`.env`文件
+   - 确保该文件包含所有必要的环境变量
+
+4. **网络问题**：
+   - 如果前端无法连接后端API，检查`REACT_APP_API_URL`环境变量设置
+   - 确保`stock_network`网络已创建
+
+### 本地直接运行开发环境
+
+如果你不想使用Docker，可以直接在本地运行前后端服务。这种方式需要你在本地安装所有依赖。
+
+#### 前提条件
+
+- 安装 [Python](https://www.python.org/downloads/) 3.9+
+- 安装 [Node.js](https://nodejs.org/en/download/) 22+
+- 安装 [PostgreSQL](https://www.postgresql.org/download/) 17+
+
+#### 配置环境变量
+
+1. 复制项目根目录下的`.env.example`文件为`.env`：
+   ```bash
+   # Windows
+   copy .env.example .env
+   
+   # Linux/macOS
+   cp .env.example .env
+   ```
+
+2. 编辑`.env`文件，设置数据库连接信息和其他必要的环境变量。确保设置正确的数据库主机名（通常是`localhost`）。
+
+#### 设置数据库
+
+1. 创建PostgreSQL数据库：
+   ```sql
+   CREATE DATABASE stock_db;
+   ```
+
+2. 确保在`.env`文件中配置了正确的数据库连接信息。
+
+#### 运行后端服务
 
 1. 进入后端目录：
    ```bash
-   cd StockVisualizer/backend
+   cd backend
    ```
 
-2. 安装依赖：
+2. 创建并激活虚拟环境（可选但推荐）：
+   ```bash
+   # Windows
+   python -m venv venv
+   venv\Scripts\activate
+   
+   # Linux/macOS
+   python -m venv venv
+   source venv/bin/activate
+   ```
+
+3. 安装依赖：
    ```bash
    pip install -r requirements.txt
    ```
 
-3. 配置环境变量：
-   - 复制 `.env.example` 文件为 `.env`
-   - 根据实际情况修改数据库连接信息
-
-4. 启动后端服务：
+4. 运行后端服务：
    ```bash
+   # 使用uvicorn启动FastAPI应用
    uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-5. 访问API文档：
-   - 打开浏览器访问 `http://localhost:8000/docs`
-   - 可以查看和测试所有API接口
+5. 后端服务将在 http://localhost:8000 运行，API文档可在 http://localhost:8000/docs 访问。
 
-
-
-### 前端开发
+#### 运行前端服务
 
 1. 进入前端目录：
    ```bash
-   cd StockVisualizer/frontend
+   cd frontend
    ```
 
 2. 安装依赖：
@@ -228,18 +321,94 @@ volumes:
    npm install
    ```
 
-3. 运行开发服务器：
+3. 运行前端开发服务器：
    ```bash
    npm start
    ```
 
-## 注意事项
+4. 前端应用将在 http://localhost:3000 运行。
 
-- 确保 PostgreSQL 数据库中已有 `daily_stock` 和 `daily_index` 表
-- 前端开发需要 Node.js 22.0+ 环境
-- 后端开发需要 Python 3.9+ 环境
-- 数据库连接配置可通过环境变量或配置文件设置
-- K线图功能依赖于ECharts库，确保正确安装
+#### 本地开发注意事项
+
+1. **环境变量**：确保`.env`文件中的`REACT_APP_API_BASE_URL`设置为`http://localhost:8000/api`，以便前端能够正确连接后端API。
+
+2. **数据库连接**：确保PostgreSQL服务正在运行，并且可以使用`.env`文件中配置的凭据连接。
+
+3. **代码热重载**：
+   - 后端：uvicorn的`--reload`参数会监视代码变化并自动重启服务
+   - 前端：React开发服务器会自动检测变化并重新编译
+
+4. **跨域问题**：如果遇到跨域问题，确保后端的CORS设置正确，允许来自前端开发服务器的请求。
+
+## 部署指南
+
+### 使用 Docker（推荐）
+
+1. 确保安装了Docker和Docker Compose：
+```bash
+# 检查Docker版本
+docker --version
+
+# 检查Docker Compose版本
+docker-compose --version
+```
+
+2. 配置环境变量：
+   - 复制项目根目录下的`.env.example`文件为`.env`
+   - 根据实际情况修改环境变量，特别是数据库连接信息
+
+3. 使用Docker Compose构建和运行：
+```bash
+# 构建并启动所有服务
+docker-compose up -d --build
+
+# 查看运行状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+```
+
+4. 访问应用：
+   - 前端：http://localhost:3000
+   - 后端API：http://localhost:8000
+   - API文档：http://localhost:8000/docs
+
+### 使用 Nginx 作为反向代理
+
+1. 安装 Nginx：
+```bash
+sudo apt-get update
+sudo apt-get install nginx
+```
+
+2. 配置 Nginx：
+```nginx
+# /etc/nginx/sites-available/stock-visualizer
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+3. 启用站点：
+```bash
+sudo ln -s /etc/nginx/sites-available/stock-visualizer /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
 
 ## 使用指南
 
@@ -269,4 +438,19 @@ volumes:
 2. 选择导出格式（CSV或Excel）
 3. 选择导出数据范围
 4. 确认导出
+
+## 监控和维护
+
+### 日志管理
+- 后端日志：`/var/log/stock-visualizer/backend.log`
+- 前端日志：`/var/log/stock-visualizer/frontend.log`
+- Nginx 日志：`/var/log/nginx/access.log` 和 `/var/log/nginx/error.log`
+
+### 数据备份
+```bash
+# 数据库备份
+pg_dump -U stock_user stock_visualizer > backup.sql
+
+# 配置文件备份
+tar -czf config_backup.tar.gz .env nginx.conf
 ```

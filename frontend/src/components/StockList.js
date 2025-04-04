@@ -48,6 +48,7 @@ const StockList = () => {
   const fetchStockList = useCallback(async (params = {}) => {
     // 取消之前的请求（如果存在）
     if (abortControllerRef.current) {
+      console.log('取消之前的请求');
       abortControllerRef.current.abort();
     }
     
@@ -91,6 +92,7 @@ const StockList = () => {
         setLoadingProgress(prev => Math.min(prev + 10, 90));
       }, 300);
       
+      console.log(`发起API请求: 页码=${page}, 每页数量=${pageSize}, 搜索=${search}`);
       const response = await getStockList(apiParams);
       clearInterval(progressInterval);
       setLoadingProgress(100);
@@ -125,8 +127,8 @@ const StockList = () => {
       }
     } catch (error) {
       // 忽略取消请求的错误
-      if (error.name === 'AbortError') {
-        console.log('请求已取消');
+      if (error.name === 'AbortError' || error.message === 'canceled') {
+        console.log('请求已取消，不显示错误');
         return;
       }
       
@@ -153,17 +155,25 @@ const StockList = () => {
   }, []);
 
   // 初始加载数据
-  useEffect(() => {
-    fetchStockList({ page: 1 });
-    
-    // 组件卸载时取消请求
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchStockList]);
-
+      useEffect(() => {
+        // 使用一个标志变量来标记是否是组件的首次渲染
+        const isFirstRender = pagination.current === 1 && stockData.length === 0;
+        
+        // 只有在首次渲染时才自动加载数据，避免与Table的onChange事件冲突
+        if (isFirstRender) {
+          console.log('组件首次渲染，加载初始数据');
+          fetchStockList({ page: 1 });
+        }
+        
+        // 组件卸载时取消请求
+        return () => {
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+        };
+      }, [fetchStockList]);
+      
+      // 移除对pagination.current和stockData.length的依赖，避免不必要的重新加载
   // 处理表格变化（仅处理排序等，分页由pagination.onChange处理）
   const handleTableChange = (paginationInfo, filters, sorter) => {
     // 处理排序
