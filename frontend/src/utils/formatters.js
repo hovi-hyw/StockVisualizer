@@ -45,15 +45,15 @@ export const formatCurrency = (value, decimal = 2, prefix = '¥') => {
 };
 
 /**
- * 格式化数字为百分比
- * @param {number} value - 数值
- * @param {number} decimal - 小数位数，默认为2
+ * 格式化百分比数值
+ * @param {number} value - 要格式化的数值（已经是百分比值，如4.39表示4.39%）
+ * @param {number} [decimals=2] - 小数位数
  * @returns {string} 格式化后的百分比字符串
  */
-export const formatPercent = (value, decimal = 2) => {
-  if (value === null || value === undefined) return '';
-
-  return `${(parseFloat(value) * 100).toFixed(decimal)}%`;
+export const formatPercent = (value, decimals = 2) => {
+  if (value === null || value === undefined) return '-';
+  // 后端已传来准确的百分比值，不需要乘以100
+  return `${parseFloat(value).toFixed(decimals)}%`;
 };
 
 /**

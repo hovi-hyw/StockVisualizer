@@ -19,6 +19,7 @@ import StockKlineDemo from './pages/StockKlineDemo';
 
 // 导入布局组件
 import Footer from './components/Footer';
+import NavButtons from './components/NavButtons';
 
 // 导入样式
 import './App.css';
@@ -34,6 +35,8 @@ function App() {
   return (
     <Layout className="app-layout">
       <Layout>
+        {/* 添加导航按钮组件 */}
+        <NavButtons />
         <Content className="app-content" style={{ marginLeft: 0 }}>
           <Routes>
             <Route path="/" element={<HomePage />} />

@@ -16,15 +16,37 @@ from backend.models.index_model import IndexData
 
 
 def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, search: str | None = None, page: int | None = None):
-    # 优化基础查询 - 使用子查询获取最新价格，避免使用窗口函数
+    # 优化基础查询 - 使用子查询获取最新价格、涨跌幅和成交量，并关联股票名称
     base_query = """
-    SELECT s.symbol, s.close as latest_price
+    SELECT 
+        s.symbol, 
+        si.name,
+        s.close as latest_price,
+        CASE 
+            WHEN prev.close IS NOT NULL THEN ((s.close - prev.close) / prev.close * 100)
+            ELSE 0 
+        END as change_percent,
+        s.volume
     FROM (
         SELECT symbol, MAX(date) as max_date
         FROM daily_stock
         GROUP BY symbol
     ) latest
     JOIN daily_stock s ON s.symbol = latest.symbol AND s.date = latest.max_date
+    LEFT JOIN stock_info si ON s.symbol = si.symbol
+    LEFT JOIN (
+        -- 获取前一交易日数据用于计算涨跌幅
+        SELECT ds.symbol, ds.close, ds.date
+        FROM daily_stock ds
+        INNER JOIN (
+            SELECT symbol, MAX(date) as prev_date
+            FROM daily_stock
+            WHERE date < (
+                SELECT MAX(date) FROM daily_stock
+            )
+            GROUP BY symbol
+        ) pd ON ds.symbol = pd.symbol AND ds.date = pd.prev_date
+    ) prev ON s.symbol = prev.symbol
     """
     count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_stock"
 
@@ -114,8 +136,20 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
         has_next = offset + page_size < total
         has_prev = page > 1
         
+        # 转换字段名以匹配前端期望的格式
+        result_items = []
+        for _, row in stocks.iterrows():
+            item = {
+                "symbol": row["symbol"],
+                "name": row["name"] if pd.notna(row["name"]) else "N/A",
+                "current_price": float(row["latest_price"]) if pd.notna(row["latest_price"]) else None,
+                "change_percent": float(row["change_percent"]) if pd.notna(row["change_percent"]) else 0,
+                "volume": float(row["volume"]) if pd.notna(row["volume"]) else 0
+            }
+            result_items.append(item)
+            
         return {
-            "items": stocks.to_dict(orient="records"),
+            "items": result_items,
             "total": total,
             "page_size": page_size,
             "current_page": page,
@@ -196,8 +230,20 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                 if prev_result:
                     prev_cursor = prev_result[0]
 
+        # 转换字段名以匹配前端期望的格式
+        result_items = []
+        for _, row in stocks.iterrows():
+            item = {
+                "symbol": row["symbol"],
+                "name": row["name"] if "name" in row and pd.notna(row["name"]) else "N/A",
+                "current_price": float(row["latest_price"]) if pd.notna(row["latest_price"]) else None,
+                "change_percent": float(row["change_percent"]) if "change_percent" in row and pd.notna(row["change_percent"]) else 0,
+                "volume": float(row["volume"]) if "volume" in row and pd.notna(row["volume"]) else 0
+            }
+            result_items.append(item)
+
         return {
-            "items": stocks.to_dict(orient="records"),
+            "items": result_items,
             "total": total,
             "page_size": page_size,
             "next_cursor": next_cursor,
@@ -206,11 +252,15 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
 
 
 def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, search: str | None = None, page: int | None = None):
-    # 基础查询
+    # 基础查询 - 扩展返回字段，包括名称、涨跌幅和成交量
     base_query = """
-    SELECT DISTINCT symbol,
-           first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
-    FROM daily_index
+    SELECT DISTINCT di.symbol,
+           COALESCE(ii.name, 'N/A') as name,  -- 从index_info表获取名称
+           first_value(di.close) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as latest_price,
+           first_value(di.change_rate) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as change_percent,
+           first_value(di.volume) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as volume
+    FROM daily_index di
+    LEFT JOIN index_info ii ON di.symbol = ii.symbol
     """
     count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_index"
 
@@ -269,14 +319,8 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                 where_clauses.append("symbol > :cursor_symbol")
                 params['cursor_symbol'] = cursor_symbol
                 
-                # 重新组合WHERE子句
-                base_query = """
-                SELECT DISTINCT symbol,
-                       first_value(close) OVER (PARTITION BY symbol ORDER BY date DESC) as latest_price
-                FROM daily_index
-                """
-                if where_clauses:
-                    base_query += " WHERE " + " AND ".join(where_clauses)
+                # 不需要重新组合WHERE子句，使用已优化的base_query
+                # 游标条件已经添加到where_clauses中
             except Exception:
                 # 如果游标解析失败，忽略游标条件
                 pass

@@ -256,7 +256,7 @@ const StockList = () => {
       title: '最新价',
       dataIndex: 'current_price',
       key: 'current_price',
-      render: (text) => formatCurrency(text, 2, ''),
+      render: (text) => text ? formatCurrency(text, 2, '') : '-',
       sorter: (a, b) => a.current_price - b.current_price,
     },
     {
@@ -264,8 +264,10 @@ const StockList = () => {
       dataIndex: 'change_percent',
       key: 'change_percent',
       render: (text, record) => {
+        if (!text && text !== 0) return '-';
         const direction = getPriceDirection(record.current_price, record.prev_close_price);
         const color = direction === 'up' ? 'red' : direction === 'down' ? 'green' : '';
+        // 使用formatPercent函数直接格式化，不做额外处理
         return <Tag color={color}>{formatPercent(text)}</Tag>;
       },
       sorter: (a, b) => a.change_percent - b.change_percent,
@@ -274,7 +276,7 @@ const StockList = () => {
       title: '成交量',
       dataIndex: 'volume',
       key: 'volume',
-      render: (text) => formatCurrency(text, 0, ''),
+      render: (text) => text ? formatCurrency(text, 0, '') : '-',
       sorter: (a, b) => a.volume - b.volume,
     },
     {

@@ -1,6 +1,6 @@
 // frontend/src/components/IndexList.js
 import React, { useState, useEffect } from 'react';
-import { Table, Input, message, Button, Space, Alert } from 'antd';
+import { Table, Input, message, Button, Space, Alert, Tag } from 'antd';
 import { LineChartOutlined, SearchOutlined } from '@ant-design/icons';
 import { getIndexList } from '../services/indexService';
 
@@ -146,6 +146,26 @@ const IndexList = () => {
       dataIndex: 'latest_price',
       key: 'latest_price',
       render: (text) => (text ? text.toFixed(2) : '-'),
+      sorter: (a, b) => a.latest_price - b.latest_price,
+    },
+    {
+      title: '涨跌幅',
+      dataIndex: 'change_percent',
+      key: 'change_percent',
+      render: (text) => {
+        if (!text && text !== 0) return '-';
+        const color = text > 0 ? 'red' : text < 0 ? 'green' : '';
+        // 直接使用后端传来的涨跌幅，不再乘以100
+        return <Tag color={color}>{text > 0 ? '+' : ''}{text.toFixed(2)}%</Tag>;
+      },
+      sorter: (a, b) => a.change_percent - b.change_percent,
+    },
+    {
+      title: '成交量',
+      dataIndex: 'volume',
+      key: 'volume',
+      render: (text) => (text ? text.toLocaleString() : '-'),
+      sorter: (a, b) => a.volume - b.volume,
     },
     {
       title: '操作',
