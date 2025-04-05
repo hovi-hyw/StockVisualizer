@@ -263,11 +263,11 @@ const StockList = () => {
       title: '涨跌幅',
       dataIndex: 'change_percent',
       key: 'change_percent',
-      render: (text, record) => {
+      render: (text) => {
         if (!text && text !== 0) return '-';
-        const direction = getPriceDirection(record.current_price, record.prev_close_price);
-        const color = direction === 'up' ? 'red' : direction === 'down' ? 'green' : '';
-        // 使用formatPercent函数直接格式化，不做额外处理
+        const color = text > 0 ? 'red' : text < 0 ? 'green' : '';
+        // 直接使用后端传来的涨跌幅，不再乘以100
+        return <Tag color={color}>{text > 0 ? '+' : ''}{text.toFixed(2)}%</Tag>;
         return <Tag color={color}>{formatPercent(text)}</Tag>;
       },
       sorter: (a, b) => a.change_percent - b.change_percent,

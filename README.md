@@ -307,6 +307,12 @@ docker-compose -f deployment/docker-compose.dev.yml up
    uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
+   本地运行的时候使用：
+   ```bash
+   # 使用uvicorn启动FastAPI应用
+   python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
 5. 后端服务将在 http://localhost:8000 运行，API文档可在 http://localhost:8000/docs 访问。
 
 #### 运行前端服务
