@@ -409,7 +409,7 @@ const StockList = () => {
         onChange={handleTableChange}
         scroll={{ x: 'max-content' }}
         locale={{
-          emptyText: loading ? <Spin tip="加载中..."/> : '暂无数据'
+          emptyText: loading ? <div style={{ padding: '20px', textAlign: 'center' }}><Spin tip="加载中..." /></div> : '暂无数据'
         }}
       />
     </div>
