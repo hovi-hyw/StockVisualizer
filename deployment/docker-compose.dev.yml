@@ -38,7 +38,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true  # 在某些环境下需要启用轮询以检测文件变化
       - WDS_SOCKET_PORT=3000  # WebSocket端口设置
-      - REACT_APP_API_URL=http://localhost:8001  # API地址更新为新的后端端口
+      - REACT_APP_API_URL=http://localhost:8000/api  # 修正API地址为正确的后端端口
     networks:
       - stock_network
     restart: unless-stopped

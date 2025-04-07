@@ -55,13 +55,19 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
 
     # 添加搜索条件
     if search:
-        where_clauses.append("s.symbol LIKE :search")
+        # 修改搜索条件，同时匹配股票代码和股票名称
+        where_clauses.append("(s.symbol LIKE :search OR si.name LIKE :search)")
         params['search'] = f"%{search}%"
-        # 同时更新计数查询的搜索条件
-        count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_stock WHERE symbol LIKE :search"
+        # 同时更新计数查询的搜索条件 - 需要使用JOIN来匹配名称
+        count_base_query = """
+        SELECT COUNT(DISTINCT ds.symbol) 
+        FROM daily_stock ds
+        LEFT JOIN stock_info si ON ds.symbol = si.symbol
+        WHERE (ds.symbol LIKE :search OR si.name LIKE :search)
+        """
 
     # 组合WHERE子句
-    if where_clauses and not search:  # 如果已经在search中添加了WHERE条件，则不需要再添加
+    if where_clauses:  # 移除了'and not search'条件，确保搜索条件被正确添加到查询中
         base_query += " WHERE " + " AND ".join(where_clauses)
         
     # 执行计数查询 - 使用缓存变量避免重复计算
@@ -84,10 +90,11 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                 symbol_query = f"""
                 SELECT symbol
                 FROM (
-                    SELECT DISTINCT symbol
-                    FROM daily_stock
-                    {' WHERE symbol LIKE :search' if search else ''}
-                    ORDER BY symbol ASC
+                    SELECT DISTINCT ds.symbol
+                    FROM daily_stock ds
+                    LEFT JOIN stock_info si ON ds.symbol = si.symbol
+                    {' WHERE (ds.symbol LIKE :search OR si.name LIKE :search)' if search else ''}
+                    ORDER BY ds.symbol ASC
                     LIMIT 1 OFFSET {offset}
                 ) as first_symbol
                 """
@@ -214,11 +221,13 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
             if not stocks.empty:
                 first_symbol = stocks.iloc[0]['symbol']
                 prev_query = f"""
-                SELECT symbol
-                FROM (SELECT DISTINCT symbol FROM daily_stock
-                      WHERE symbol < :first_symbol
-                      {' AND symbol LIKE :search' if search else ''}
-                      ORDER BY symbol DESC
+                SELECT ds.symbol
+                FROM (SELECT DISTINCT ds.symbol 
+                      FROM daily_stock ds
+                      LEFT JOIN stock_info si ON ds.symbol = si.symbol
+                      WHERE ds.symbol < :first_symbol
+                      {' AND (ds.symbol LIKE :search OR si.name LIKE :search)' if search else ''}
+                      ORDER BY ds.symbol DESC
                       LIMIT {page_size}) sub
                 ORDER BY symbol ASC
                 LIMIT 1
