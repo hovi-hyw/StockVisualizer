@@ -7,8 +7,9 @@ WORKDIR /app
 # 复制package.json和package-lock.json
 COPY ./frontend/package*.json ./
 
-# 安装所有依赖（包括开发依赖）
-RUN npm install && \
+# 安装系统依赖 (包括 curl 用于健康检查) 和 Node.js 依赖
+RUN apk add --no-cache curl && \
+    npm install && \
     npm cache clean --force
 
 # 不复制源代码，将通过卷挂载实现

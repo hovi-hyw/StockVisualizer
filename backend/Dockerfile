@@ -7,11 +7,14 @@ WORKDIR /app
 # 复制requirements文件
 COPY ./backend/requirements.txt /app/
 
-# 安装依赖
-RUN pip install --no-cache-dir --upgrade pip setuptools>=70.0.0 wheel && \
+# 安装系统依赖 (包括 curl 用于健康检查) 和 Python 依赖
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    pip install --no-cache-dir --upgrade pip setuptools>=70.0.0 wheel && \
     pip install --no-cache-dir -r requirements.txt && \
     # 安装开发工具，支持热重载
-    pip install --no-cache-dir watchfiles
+    pip install --no-cache-dir watchfiles && \
+    # 清理 apt 缓存
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 不复制项目文件，将通过卷挂载实现
 # 在docker-compose.yml中设置卷挂载

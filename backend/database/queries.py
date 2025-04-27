@@ -229,7 +229,7 @@ def get_stock_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                       {' AND (ds.symbol LIKE :search OR si.name LIKE :search)' if search else ''}
                       ORDER BY ds.symbol DESC
                       LIMIT {page_size}) sub
-                ORDER BY symbol ASC
+                ORDER BY sub.symbol ASC
                 LIMIT 1
                 """
                 prev_params = {'first_symbol': first_symbol}
@@ -271,14 +271,14 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
     FROM daily_index di
     LEFT JOIN index_info ii ON di.symbol = ii.symbol
     """
-    count_base_query = "SELECT COUNT(DISTINCT symbol) FROM daily_index"
+    count_base_query = "SELECT COUNT(DISTINCT di.symbol) FROM daily_index di"
 
     params = {}
     where_clauses = []
 
     # 添加搜索条件
     if search:
-        where_clauses.append("symbol LIKE :search")
+        where_clauses.append("di.symbol LIKE :search")
         params['search'] = f"%{search}%"
 
     # 组合WHERE子句
@@ -354,12 +354,12 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                 first_symbol = indices.iloc[0]['symbol']
                 prev_query = f"""
                 SELECT symbol
-                FROM (SELECT DISTINCT symbol FROM daily_index
-                      WHERE symbol < :first_symbol
-                      {' AND symbol LIKE :search' if search else ''}
-                      ORDER BY symbol DESC
+                FROM (SELECT DISTINCT di.symbol FROM daily_index di
+                      WHERE di.symbol < :first_symbol
+                      {' AND di.symbol LIKE :search' if search else ''}
+                      ORDER BY di.symbol DESC
                       LIMIT {page_size}) sub
-                ORDER BY symbol ASC
+                ORDER BY sub.symbol ASC
                 LIMIT 1
                 """
                 prev_params = {'first_symbol': first_symbol}
