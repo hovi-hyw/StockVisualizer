@@ -21,8 +21,8 @@ docker-compose -f deployment/docker-compose.dev.yml up
 ```
 
 这将启动：
-- 前端开发服务器 (React) - 访问 http://localhost:3000
-- 后端API服务器 (FastAPI) - 访问 http://localhost:8000
+- 前端开发服务器 (React) - 访问 http://localhost:3001
+- 后端API服务器 (FastAPI) - 访问 http://localhost:8970
 
 ### 代码实时更新
 

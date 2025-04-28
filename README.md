@@ -215,8 +215,8 @@ docker-compose -f deployment/docker-compose.dev.yml up
 ```
 
 这将启动：
-- 前端开发服务器 (React) - 访问 http://localhost:3000
-- 后端API服务器 (FastAPI) - 访问 http://localhost:8000
+- 前端开发服务器 (React) - 访问 http://localhost:3001
+- 后端API服务器 (FastAPI) - 访问 http://localhost:8080
 
 #### 代码实时更新
 
@@ -304,16 +304,16 @@ docker-compose -f deployment/docker-compose.dev.yml up
 4. 运行后端服务：
    ```bash
    # 使用uvicorn启动FastAPI应用
-   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8080
    ```
 
    本地运行的时候使用：
    ```bash
    # 使用uvicorn启动FastAPI应用
-   python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8080
    ```
 
-5. 后端服务将在 http://localhost:8000 运行，API文档可在 http://localhost:8000/docs 访问。
+5. 后端服务将在 http://localhost:8080 运行，API文档可在 http://localhost:8080/docs 访问。
 
 #### 运行前端服务
 
@@ -332,11 +332,11 @@ docker-compose -f deployment/docker-compose.dev.yml up
    npm start
    ```
 
-4. 前端应用将在 http://localhost:3000 运行。
+4. 前端应用将在 http://localhost:3001 运行。
 
 #### 本地开发注意事项
 
-1. **环境变量**：确保`.env`文件中的`REACT_APP_API_BASE_URL`设置为`http://localhost:8000/api`，以便前端能够正确连接后端API。
+1. **环境变量**：确保`.env`文件中的`REACT_APP_API_BASE_URL`设置为`http://localhost:8080/api`，以便前端能够正确连接后端API。
 
 2. **数据库连接**：确保PostgreSQL服务正在运行，并且可以使用`.env`文件中配置的凭据连接。
 
@@ -376,9 +376,9 @@ docker-compose logs -f
 ```
 
 4. 访问应用：
-   - 前端：http://localhost:3000
-   - 后端API：http://localhost:8000
-   - API文档：http://localhost:8000/docs
+   - 前端：http://localhost:3001
+   - 后端API：http://localhost:8080
+   - API文档：http://localhost:8080/docs
 
 ### 使用 Nginx 作为反向代理
 
@@ -396,7 +396,7 @@ server {
     server_name your-domain.com;
 
     location /api {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://localhost:8080;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }

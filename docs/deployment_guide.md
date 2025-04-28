@@ -124,9 +124,9 @@ docker-compose logs -f
 ```
 
 4. 访问应用：
-   - 前端：http://localhost:3000
-   - 后端API：http://localhost:8000
-   - API文档：http://localhost:8000/docs
+   - 前端：http://localhost:3001
+   - 后端API：http://localhost:8080
+   - API文档：http://localhost:8080/docs
 
 5. 停止服务：
 ```bash
@@ -134,7 +134,7 @@ docker-compose down
 ```
 
 6. 常见问题：
-   - 如果遇到端口冲突，可以在`docker-compose.yml`中修改端口映射
+   - 如果遇到端口冲突，可以在`docker-compose.yml`中进一步修改端口映射
    - 数据库连接问题，确保在Docker环境中使用正确的主机名（通常是服务名`db`）
    - 容器间通信问题，检查Docker网络配置
 

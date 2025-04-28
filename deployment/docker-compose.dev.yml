@@ -7,7 +7,7 @@ services:
       context: ..
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "8970:8000"
     environment:
       - DEBUG=True
       - LOG_LEVEL=DEBUG
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     # 开发环境可以简化健康检查
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8970/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -31,20 +31,20 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
     ports:
-      - "3000:3000"  # 映射到React开发服务器端口
+      - "3001:3000"  # 映射到React开发服务器端口
     volumes:
       - ../frontend:/app  # 挂载本地前端代码到容器
       - /app/node_modules  # 排除node_modules目录，使用容器内的依赖
     environment:
       - CHOKIDAR_USEPOLLING=true  # 在某些环境下需要启用轮询以检测文件变化
-      - WDS_SOCKET_PORT=3000  # WebSocket端口设置
-      - REACT_APP_API_URL=http://localhost:8000/api # 浏览器需要访问 localhost
+      - WDS_SOCKET_PORT=3001  # WebSocket端口设置
+      - REACT_APP_API_URL=http://localhost:8970/api # 浏览器需要访问 localhost
     networks:
       - stock_network
     restart: unless-stopped
     # 开发环境可以简化健康检查
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 10s
       timeout: 5s
       retries: 3

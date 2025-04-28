@@ -49,14 +49,14 @@
    
    # API配置
    API_HOST=0.0.0.0
-   API_PORT=8000
+   API_PORT=8080
    DEBUG=True
    
    # 日志级别
    LOG_LEVEL=INFO
    
    # 前端API基础URL（用于前端开发）
-   REACT_APP_API_BASE_URL=http://localhost:8000/api
+   REACT_APP_API_BASE_URL=http://localhost:8080/api
    
    # 或者直接设置完整的连接字符串（优先级更高）
    # DATABASE_URL=postgresql://si:jojo@localhost:5432/stock_db
