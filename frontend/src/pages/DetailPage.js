@@ -10,7 +10,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
 import KLineChart from '../components/KLineChart';
-import RealChangeChart from '../components/RealChangeChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 
@@ -19,16 +18,14 @@ const DetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [info, setInfo] = useState(null);
   const [klineData, setKlineData] = useState(null);
-  // 确认添加了这两个状态
-  const [showRealChangeChart, setShowRealChangeChart] = useState(false);
+  // 只保留对比涨跌图的状态
   const [showComparativeChangeChart, setShowComparativeChangeChart] = useState(false);
 
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      // 确认重置了状态
-      setShowRealChangeChart(false);
+      // 只重置对比涨跌图状态
       setShowComparativeChangeChart(false);
       try {
         let infoResponse, klineResponse;
@@ -54,11 +51,7 @@ const DetailPage = () => {
     fetchData();
   }, [type, symbol]);
 
-  // 确认添加了这两个处理函数
-  const toggleRealChangeChart = () => {
-    setShowRealChangeChart(prev => !prev);
-  };
-
+  // 只保留对比涨跌图的处理函数
   const toggleComparativeChangeChart = () => {
     setShowComparativeChangeChart(prev => !prev);
   };
@@ -72,15 +65,8 @@ const DetailPage = () => {
     <div>
       <h2>{info?.name} ({symbol}) K线图</h2>
       
-      {/* 添加按钮 */}
+      {/* 只保留对比涨跌按钮 */}
       <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-        <Button
-          type={showRealChangeChart ? "primary" : "default"}
-          onClick={toggleRealChangeChart}
-          style={{ marginRight: '10px' }}
-        >
-          真实涨跌
-        </Button>
         <Button
           type={showComparativeChangeChart ? "primary" : "default"}
           onClick={toggleComparativeChangeChart}
@@ -89,19 +75,12 @@ const DetailPage = () => {
         </Button>
       </div>
       
-      {/* K线图 */}
-      <KLineChart data={klineData} title={`${info?.name} (${symbol}) K线图`} />
-      
-      {/* 真实涨跌图 - 放在K线图和量能图之间 */}
-      {showRealChangeChart && (
-        <div style={{ margin: '10px 0' }}>
-          <RealChangeChart 
-            symbol={symbol} 
-            title={`${info?.name} (${symbol}) 真实涨跌`} 
-            data={klineData} 
-          />
-        </div>
-      )}
+      {/* K线图 - 现在包含K线、量能和真实涨跌三个子图表 */}
+      <KLineChart 
+        data={klineData} 
+        title={`${info?.name} (${symbol}) K线图`} 
+        symbol={symbol} 
+      />
 
       {showComparativeChangeChart && (
         <div style={{ marginTop: '20px', border: '1px solid #eee', padding: '10px' }}>

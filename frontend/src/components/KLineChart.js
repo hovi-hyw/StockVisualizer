@@ -1,14 +1,15 @@
 // frontend/src/components/KLineChart.js
 /**
  * 此组件用于展示K线图。
- * 使用ECharts绘制股票或指数的K线图。
+ * 使用ECharts绘制股票或指数的K线图，包含K线、量能和真实涨跌三个子图表。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { formatDate, formatLargeNumber } from '../utils/formatters';
+import { getStockRealChange } from '../services/stockService';
 
 /**
  * K线图组件
@@ -16,10 +17,12 @@ import { formatDate, formatLargeNumber } from '../utils/formatters';
  * @param {Array} props.data - K线数据
  * @param {string} props.title - 图表标题
  * @param {string} props.theme - 图表主题，'light'或'dark'
+ * @param {string} props.symbol - 股票代码，用于获取真实涨跌数据
  */
-const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
+const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
+  const [realChangeData, setRealChangeData] = useState(null);
 
   useEffect(() => {
     // 初始化图表
@@ -42,6 +45,26 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
     }
   }, [theme]);
 
+  // 获取真实涨跌数据
+  useEffect(() => {
+    const fetchRealChangeData = async () => {
+      if (!data || !data.data || data.data.length === 0 || !symbol) return;
+      
+      try {
+        // 获取真实涨跌数据，传递相同的日期范围
+        const realChangeResponse = await getStockRealChange(symbol, {
+          start_date: data.data[0]?.date,
+          end_date: data.data[data.data.length - 1]?.date
+        });
+        setRealChangeData(realChangeResponse);
+      } catch (error) {
+        console.error('获取真实涨跌数据失败:', error);
+      }
+    };
+
+    fetchRealChangeData();
+  }, [data, symbol]);
+
   useEffect(() => {
     if (!chartInstance.current || !data || !data.data || data.data.length === 0) return;
 
@@ -57,6 +80,16 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
       parseFloat(item.high)
     ]);
     const volumes = sortedData.map(item => parseFloat(item.volume));
+    
+    // 创建真实涨跌数据数组
+    let realChangeValues = [];
+    if (realChangeData && realChangeData.data) {
+      const realChangeDataArray = realChangeData.data;
+      realChangeValues = sortedData.map(item => {
+        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
+        return matchingItem ? matchingItem.real_change : 0;
+      });
+    }
 
     const option = {
       title: {
@@ -102,13 +135,19 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
         {
           left: '5%',
           right: '5%',
-          height: '75%'
+          height: '60%'
         },
         {
           left: '5%',
           right: '5%',
-          top: '80%',
-          height: '20%'
+          top: '65%',
+          height: '15%'
+        },
+        {
+          left: '5%',
+          right: '5%',
+          top: '85%',
+          height: '15%'
         }
       ],
       xAxis: [
@@ -132,6 +171,18 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           splitLine: { show: false },
           axisLabel: { show: false },
           splitNumber: 20
+        },
+        {
+          type: 'category',
+          gridIndex: 2,
+          data: dates,
+          scale: true,
+          boundaryGap: false,
+          axisLine: { onZero: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { show: true },
+          splitNumber: 20
         }
       ],
       yAxis: [
@@ -149,19 +200,32 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           axisLine: { show: false },
           axisTick: { show: false },
           splitLine: { show: false }
+        },
+        {
+          scale: true,
+          gridIndex: 2,
+          splitNumber: 2,
+          axisLabel: { 
+            show: true,
+            formatter: '{value}%'
+          },
+          axisLine: { show: true },
+          axisTick: { show: true },
+          splitLine: { show: false },
+          name: '真实涨跌(%)',
         }
       ],
       dataZoom: [
         {
           type: 'inside',
-          xAxisIndex: [0, 1],
+          xAxisIndex: [0, 1, 2],
           start: 0,
           end: 100,
           id: 'klineInsideZoom'
         },
         {
           show: true,
-          xAxisIndex: [0, 1],
+          xAxisIndex: [0, 1, 2],
           type: 'slider',
           bottom: '0%',
           start: 0,
@@ -195,6 +259,19 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
               return close > open ? '#c23531' : '#314656';
             }
           }
+        },
+        {
+          name: '真实涨跌',
+          type: 'bar',
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: realChangeValues,
+          itemStyle: {
+            color: function(params) {
+              // 涨跌颜色：涨为红色，跌为绿色
+              return params.value >= 0 ? '#c23531' : '#3fbf67';
+            }
+          }
         }
       ]
     };
@@ -218,7 +295,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
       ref={chartRef} 
       style={{ 
         width: '100%', 
-        height: '80vh',  // 使用视口高度单位，占据80%的视口高度
+        height: '90vh',  // 使用视口高度单位，占据90%的视口高度
         margin: '20px 0' // 添加一些上下边距
       }}
       className="kline-chart-container"
