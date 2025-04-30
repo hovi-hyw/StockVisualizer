@@ -1,7 +1,7 @@
 // frontend/src/services/stockService.js
 /**
  * 此模块提供股票数据相关的服务。
- * 封装了获取股票列表、详情和K线数据的方法。
+ * 封装了获取股票列表、详情、K线数据和真实涨跌数据的方法。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
  */
@@ -71,6 +71,24 @@ export const getStockKline = async (symbol, params = {}) => {
     return response;
   } catch (error) {
     console.error(`获取股票${symbol}K线数据失败:`, error);
+    throw error;
+  }
+};
+
+/**
+ * 获取股票真实涨跌数据
+ * @param {string} symbol - 股票代码
+ * @param {Object} params - 请求参数
+ * @param {string} params.start_date - 开始日期 (YYYY-MM-DD)
+ * @param {string} params.end_date - 结束日期 (YYYY-MM-DD)
+ * @returns {Promise<Object>} 股票真实涨跌数据
+ */
+export const getStockRealChange = async (symbol, params = {}) => {
+  try {
+    const response = await api.get(`/stocks/${symbol}/real-change`, { params });
+    return response;
+  } catch (error) {
+    console.error(`获取股票${symbol}真实涨跌数据失败:`, error);
     throw error;
   }
 };

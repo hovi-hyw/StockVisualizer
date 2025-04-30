@@ -25,6 +25,9 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
     // 初始化图表
     if (chartRef.current) {
       chartInstance.current = echarts.init(chartRef.current, theme);
+      
+      // 将图表添加到stockCharts组，实现联动
+      echarts.connect('stockCharts');
 
       // 监听窗口大小变化，调整图表大小
       const resizeHandler = () => {
@@ -153,7 +156,8 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           type: 'inside',
           xAxisIndex: [0, 1],
           start: 0,
-          end: 100
+          end: 100,
+          id: 'klineInsideZoom'
         },
         {
           show: true,
@@ -161,7 +165,8 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
           type: 'slider',
           bottom: '0%',
           start: 0,
-          end: 100
+          end: 100,
+          id: 'klineSliderZoom'
         }
       ],
       series: [
@@ -196,6 +201,16 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light' }) => {
 
     // 设置图表选项
     chartInstance.current.setOption(option);
+    
+    // 添加dataZoom事件监听，触发自定义事件通知其他图表
+    chartInstance.current.on('dataZoom', function(params) {
+      // 创建自定义事件，传递dataZoom信息
+      const event = new CustomEvent('echarts:dataZoom', {
+        detail: params
+      });
+      // 触发事件，通知其他图表
+      window.dispatchEvent(event);
+    });
   }, [data, theme, title]);
 
   return (

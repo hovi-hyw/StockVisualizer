@@ -1,7 +1,7 @@
 # backend/api/stock_api.py
 """
 此模块定义了股票数据相关的API端点。
-提供获取股票列表、股票详情和K线数据的API接口。
+提供获取股票列表、股票详情、K线数据和真实涨跌数据的API接口。
 Authors: hovi.hyw & AI
 Date: 2025-03-12
 """
@@ -9,7 +9,7 @@ Date: 2025-03-12
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from backend.database.connection import get_db
 from backend.models.stock_model import StockList, StockInfo, StockKlineData
@@ -101,6 +101,107 @@ async def get_stock_kline(
 
         kline_data = stock_service.get_stock_kline(db, symbol, start, end)
         return kline_data
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{symbol}/real-change", response_model=Dict[str, Any])
+async def get_stock_real_change(
+        symbol: str,
+        start_date: Optional[str] = Query(None, description="开始日期 (YYYY-MM-DD)"),
+        end_date: Optional[str] = Query(None, description="结束日期 (YYYY-MM-DD)"),
+        db: Session = Depends(get_db)
+):
+    """
+    获取股票真实涨跌数据。
+
+    Args:
+        symbol: 股票代码
+        start_date: 开始日期，格式为YYYY-MM-DD
+        end_date: 结束日期，格式为YYYY-MM-DD
+        db: 数据库会话
+
+    Returns:
+        Dict[str, Any]: 包含真实涨跌数据的字典
+    """
+    try:
+        # 解析日期
+        start = parse_date(start_date) if start_date else None
+        end = parse_date(end_date) if end_date else None
+        
+        # 首先获取K线数据以获取日期列表
+        kline_data = stock_service.get_stock_kline(db, symbol, start, end)
+        
+        # 查询derived_stock表中的real_change数据
+        query = """
+        SELECT ds.symbol, ds.date, ds.real_change
+        FROM derived_stock ds
+        WHERE ds.symbol = :symbol
+        AND (:start_date IS NULL OR ds.date >= :start_date)
+        AND (:end_date IS NULL OR ds.date <= :end_date)
+        ORDER BY ds.date
+        """
+        
+        from sqlalchemy import text
+        results = db.execute(text(query), {
+            "symbol": symbol,
+            "start_date": start,
+            "end_date": end
+        }).fetchall()
+        
+        if not results:
+            # 尝试转换股票代码格式
+            if symbol.startswith('sh') or symbol.startswith('sz') or symbol.startswith('bj'):
+                # 尝试去掉前缀
+                alt_symbol = symbol[2:]
+                results = db.execute(text(query), {
+                    "symbol": alt_symbol,
+                    "start_date": start,
+                    "end_date": end
+                }).fetchall()
+            else:
+                # 尝试添加前缀
+                for prefix in ['sh', 'sz', 'bj']:
+                    alt_symbol = f"{prefix}{symbol}"
+                    results = db.execute(text(query), {
+                        "symbol": alt_symbol,
+                        "start_date": start,
+                        "end_date": end
+                    }).fetchall()
+                    if results:
+                        break
+        
+        if not results:
+            raise HTTPException(status_code=404, detail=f"Stock with symbol {symbol} not found in derived_stock table")
+        
+        # 创建日期到real_change的映射
+        real_change_map = {}
+        used_symbol = None
+        
+        for result in results:
+            used_symbol = result[0]
+            date_str = result[1].isoformat() if result[1] else None
+            real_change_value = float(result[2]) if result[2] is not None else 0
+            if date_str:
+                real_change_map[date_str] = real_change_value
+        
+        # 为每个日期获取对应的real_change值
+        data = []
+        for item in kline_data["data"]:
+            date_str = item["date"]
+            # 如果映射中有该日期的数据，使用映射中的值，否则使用0
+            real_change = real_change_map.get(date_str, 0)
+            data.append({
+                "date": date_str,
+                "real_change": real_change
+            })
+        
+        return {
+            "symbol": used_symbol or symbol,
+            "data": data
+        }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

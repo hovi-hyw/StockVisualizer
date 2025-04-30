@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
 import KLineChart from '../components/KLineChart';
+import RealChangeChart from '../components/RealChangeChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 
@@ -70,10 +71,9 @@ const DetailPage = () => {
   return (
     <div>
       <h2>{info?.name} ({symbol}) K线图</h2>
-      <KLineChart data={klineData} title={`${info?.name} (${symbol}) K线图`} />
-
-      {/* 确认添加了按钮 */}
-      <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+      
+      {/* 添加按钮 */}
+      <div style={{ marginTop: '10px', marginBottom: '10px' }}>
         <Button
           type={showRealChangeChart ? "primary" : "default"}
           onClick={toggleRealChangeChart}
@@ -88,12 +88,18 @@ const DetailPage = () => {
           对比涨跌
         </Button>
       </div>
-
-      {/* 确认添加了条件渲染的图表占位符 */}
+      
+      {/* K线图 */}
+      <KLineChart data={klineData} title={`${info?.name} (${symbol}) K线图`} />
+      
+      {/* 真实涨跌图 - 放在K线图和量能图之间 */}
       {showRealChangeChart && (
-        <div style={{ marginTop: '20px', border: '1px solid #eee', padding: '10px' }}>
-          <h3>真实涨跌图</h3>
-          <p>这里是“真实涨跌”图表的位置。</p>
+        <div style={{ margin: '10px 0' }}>
+          <RealChangeChart 
+            symbol={symbol} 
+            title={`${info?.name} (${symbol}) 真实涨跌`} 
+            data={klineData} 
+          />
         </div>
       )}
 
