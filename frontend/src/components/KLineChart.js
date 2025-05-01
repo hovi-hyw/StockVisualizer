@@ -1,9 +1,10 @@
 // frontend/src/components/KLineChart.js
 /**
  * 此组件用于展示K线图。
- * 使用ECharts绘制股票或指数的K线图，包含K线、量能和真实涨跌三个子图表。
+ * 使用ECharts绘制股票或指数的K线图，包含K线、量能、真实涨跌和个股信息四个子图表。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
+ * 更新: 2025-03-15 - 添加个股信息图表，调整图表高度为原来的80%
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -23,6 +24,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [realChangeData, setRealChangeData] = useState(null);
+  // 移除真实涨跌显示状态控制，默认始终显示真实涨跌图表
 
   useEffect(() => {
     // 初始化图表
@@ -94,8 +96,8 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
       const realChangeDataArray = realChangeData.data;
       realChangeValues = sortedData.map(item => {
         const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        // 确保将真实涨跌值转换为数字类型
-        return matchingItem ? parseFloat(matchingItem.real_change) : 0;
+        // 确保将真实涨跌值转换为数字类型并乘以100
+        return matchingItem ? parseFloat(matchingItem.real_change) * 100 : 0;
       });
       // 确保真实涨跌数据有效
       if (realChangeValues.length === 0 || realChangeValues.every(val => val === 0)) {
@@ -131,8 +133,11 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           
           // 获取真实涨跌数据
           let realChange = '暂无数据';
+          let comparativeChange = '暂无数据';
           if (realChangeValues && realChangeValues.length > index) {
             realChange = realChangeValues[index].toFixed(2) + '%';
+            // 个股信息暂时使用相同数据
+            comparativeChange = realChangeValues[index].toFixed(2) + '%';
           }
 
           return `
@@ -144,6 +149,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
               <p style="margin: 0">最高: ${parseFloat(high).toFixed(2)}</p>
               <p style="margin: 0">成交量: ${formatLargeNumber(volume)}</p>
               <p style="margin: 0">真实涨跌: ${realChange}</p>
+              <p style="margin: 0">对比涨跌: ${comparativeChange}</p>
             </div>
           `;
         }
@@ -156,19 +162,25 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         {
           left: '5%',
           right: '5%',
-          height: '60%'
+          height: '48%'  // 调整为原来的80%（原来60%*80%=48%）
         },
         {
           left: '5%',
           right: '5%',
-          top: '65%',
-          height: '15%'
+          top: '53%',    // 调整位置
+          height: '12%'  // 调整为原来的80%（原来15%*80%=12%）
         },
         {
           left: '5%',
           right: '5%',
-          top: '85%',
-          height: '15%'
+          top: '70%',    // 调整位置
+          height: '12%'  // 调整为原来的80%（原来15%*80%=12%）
+        },
+        {
+          left: '5%',
+          right: '5%',
+          top: '87%',    // 添加个股信息图表位置
+          height: '12%'  // 与其他副图表高度一致
         }
       ],
       xAxis: [
@@ -196,6 +208,18 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         {
           type: 'category',
           gridIndex: 2,
+          data: dates,
+          scale: true,
+          boundaryGap: false,
+          axisLine: { onZero: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { show: false },  // 修改为不显示标签
+          splitNumber: 20
+        },
+        {
+          type: 'category',
+          gridIndex: 3,  // 个股信息图表的x轴
           data: dates,
           scale: true,
           boundaryGap: false,
@@ -234,19 +258,32 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           axisTick: { show: true },
           splitLine: { show: false },
           name: '真实涨跌(%)',
+        },
+        {
+          scale: true,
+          gridIndex: 3,  // 个股信息图表的y轴
+          splitNumber: 2,
+          axisLabel: { 
+            show: true,
+            formatter: '{value}%'
+          },
+          axisLine: { show: true },
+          axisTick: { show: true },
+          splitLine: { show: false },
+          name: '个股信息',
         }
       ],
       dataZoom: [
         {
           type: 'inside',
-          xAxisIndex: [0, 1, 2],
+          xAxisIndex: [0, 1, 2, 3],  // 添加对比涨跌图表的索引
           start: 0,
           end: 100,
           id: 'klineInsideZoom'
         },
         {
           show: true,
-          xAxisIndex: [0, 1, 2],
+          xAxisIndex: [0, 1, 2, 3],  // 添加对比涨跌图表的索引
           type: 'slider',
           bottom: '0%',
           start: 0,
@@ -281,6 +318,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
             }
           }
         },
+        // 始终显示真实涨跌图表
         {
           name: '真实涨跌',
           type: 'line',
@@ -314,6 +352,58 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
               // 标签颜色与柱状图一致
               return params.value >= 0 ? '#c23531' : '#3fbf67';
             }
+          },
+          markLine: {
+            symbol: 'none',
+            data: [
+              {
+                yAxis: 0,
+                lineStyle: {
+                  color: '#999',
+                  type: 'dashed'
+                },
+                label: {
+                  show: true,
+                  position: 'end',
+                  formatter: '0%'
+                }
+              }
+            ]
+          }
+        },
+        // 添加对比涨跌图表
+        {
+          name: '对比涨跌',
+          type: 'line',
+          xAxisIndex: 3,
+          yAxisIndex: 3,
+          data: realChangeValues,  // 暂时使用与真实涨跌相同的数据
+          label: {
+            show: false
+          },
+          smooth: true,
+          itemStyle: {
+            color: function(params) {
+              // 涨跌颜色：涨为红色，跌为绿色
+              return params.value >= 0 ? '#c23531' : '#3fbf67';
+            }
+          },
+          markLine: {
+            symbol: 'none',
+            data: [
+              {
+                yAxis: 0,
+                lineStyle: {
+                  color: '#999',
+                  type: 'dashed'
+                },
+                label: {
+                  show: true,
+                  position: 'end',
+                  formatter: '0%'
+                }
+              }
+            ]
           }
         }
       ]
@@ -334,15 +424,17 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
   }, [data, realChangeData, theme, title]);
 
   return (
-    <div 
-      ref={chartRef} 
-      style={{ 
-        width: '100%', 
-        height: '90vh',  // 使用视口高度单位，占据90%的视口高度
-        margin: '20px 0' // 添加一些上下边距
-      }}
-      className="kline-chart-container"
-    />
+    <div>
+      <div 
+        ref={chartRef} 
+        style={{ 
+          width: '100%', 
+          height: '72vh',  // 调整为原来的80%（原来90vh*80%=72vh）
+          margin: '0 0 20px 0' // 添加一些下边距
+        }}
+        className="kline-chart-container"
+      />
+    </div>
   );
 };
 

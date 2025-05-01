@@ -18,15 +18,15 @@ const DetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [info, setInfo] = useState(null);
   const [klineData, setKlineData] = useState(null);
-  // 只保留对比涨跌图的状态
-  const [showComparativeChangeChart, setShowComparativeChangeChart] = useState(false);
+  // 修改为个股信息的状态
+  const [showStockInfo, setShowStockInfo] = useState(false);
 
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      // 只重置对比涨跌图状态
-      setShowComparativeChangeChart(false);
+      // 重置个股信息状态
+      setShowStockInfo(false);
       try {
         let infoResponse, klineResponse;
 
@@ -51,9 +51,9 @@ const DetailPage = () => {
     fetchData();
   }, [type, symbol]);
 
-  // 只保留对比涨跌图的处理函数
-  const toggleComparativeChangeChart = () => {
-    setShowComparativeChangeChart(prev => !prev);
+  // 个股信息的处理函数
+  const toggleStockInfo = () => {
+    setShowStockInfo(prev => !prev);
   };
 
 
@@ -65,13 +65,13 @@ const DetailPage = () => {
     <div>
       <h2>{info?.name} ({symbol}) K线图</h2>
       
-      {/* 只保留对比涨跌按钮 */}
+      {/* 个股信息按钮 */}
       <div style={{ marginTop: '10px', marginBottom: '10px' }}>
         <Button
-          type={showComparativeChangeChart ? "primary" : "default"}
-          onClick={toggleComparativeChangeChart}
+          type={showStockInfo ? "primary" : "default"}
+          onClick={toggleStockInfo}
         >
-          对比涨跌
+          个股信息
         </Button>
       </div>
       
@@ -82,10 +82,10 @@ const DetailPage = () => {
         symbol={symbol} 
       />
 
-      {showComparativeChangeChart && (
+      {showStockInfo && (
         <div style={{ marginTop: '20px', border: '1px solid #eee', padding: '10px' }}>
-          <h3>对比涨跌图</h3>
-          <p>这里是“对比涨跌”图表的位置。</p>
+          <h3>个股信息</h3>
+          <p>这里是个股信息的文本框。</p>
         </div>
       )}
     </div>
