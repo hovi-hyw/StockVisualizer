@@ -283,10 +283,14 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         },
         {
           name: '真实涨跌',
-          type: 'bar',
+          type: 'line',
           xAxisIndex: 2,
           yAxisIndex: 2,
           data: realChangeValues,
+          label: {
+            show: false
+          },
+          smooth: true,
           itemStyle: {
             color: function(params) {
               // 涨跌颜色：涨为红色，跌为绿色
@@ -295,7 +299,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           },
           // 添加标签显示数值
           label: {
-            show: true,
+            show: false,
             position: function(params) {
               // 根据值的正负决定标签位置
               return params.value >= 0 ? 'top' : 'bottom';
