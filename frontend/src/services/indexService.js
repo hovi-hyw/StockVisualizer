@@ -1,9 +1,10 @@
 // frontend/src/services/indexService.js
 /**
  * 此模块提供指数数据相关的服务。
- * 封装了获取指数列表、详情和K线数据的方法。
+ * 封装了获取指数列表、详情、K线数据和真实涨跌数据的方法。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
+ * 更新: 2025-03-16 - 添加获取指数真实涨跌数据的方法
  */
 
 import api from './api';
@@ -64,6 +65,25 @@ export const getIndexKline = async (symbol, params = {}) => {
     return response;
   } catch (error) {
     console.error(`获取指数${symbol}K线数据失败:`, error);
+    throw error;
+  }
+};
+
+/**
+ * 获取指数真实涨跌数据
+ * @param {string} symbol - 指数代码
+ * @param {Object} params - 请求参数
+ * @param {string} params.start_date - 开始日期 (YYYY-MM-DD)
+ * @param {string} params.end_date - 结束日期 (YYYY-MM-DD)
+ * @returns {Promise<Object>} 指数真实涨跌数据
+ */
+export const getIndexRealChange = async (symbol, params = {}) => {
+  try {
+    // 使用正确的指数API路径格式
+    const response = await api.get(`/indices/${symbol}/real-change`, { params });
+    return response;
+  } catch (error) {
+    console.error(`获取指数${symbol}真实涨跌数据失败:`, error);
     throw error;
   }
 };

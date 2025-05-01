@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { formatDate, formatLargeNumber } from '../utils/formatters';
 import { getStockRealChange } from '../services/stockService';
+import { getIndexRealChange } from '../services/indexService';
 
 /**
  * K线图组件
@@ -24,6 +25,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [realChangeData, setRealChangeData] = useState(null);
+  const [indexRealChangeData, setIndexRealChangeData] = useState(null); // 添加沪深300指数真实涨跌数据状态
   // 移除真实涨跌显示状态控制，默认始终显示真实涨跌图表
 
   useEffect(() => {
@@ -47,17 +49,26 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
     }
   }, [theme]);
 
-  // 获取真实涨跌数据
+  // 获取真实涨跌数据和沪深300指数真实涨跌数据
   useEffect(() => {
     const fetchRealChangeData = async () => {
       if (!data || !data.data || data.data.length === 0 || !symbol) return;
       
       try {
-        // 获取真实涨跌数据，传递相同的日期范围
-        const realChangeResponse = await getStockRealChange(symbol, {
-          start_date: data.data[0]?.date,
-          end_date: data.data[data.data.length - 1]?.date
-        });
+        // 获取日期范围
+        const startDate = data.data[0]?.date;
+        const endDate = data.data[data.data.length - 1]?.date;
+        const dateParams = {
+          start_date: startDate,
+          end_date: endDate
+        };
+        
+        // 获取个股真实涨跌数据
+        const realChangeResponse = await getStockRealChange(symbol, dateParams);
+        
+        // 获取沪深300指数真实涨跌数据
+        const indexSymbol = '000300'; // 沪深300指数代码
+        const indexRealChangeResponse = await getIndexRealChange(indexSymbol, dateParams);
         
         // 确保返回的数据有效
         if (realChangeResponse && realChangeResponse.data && realChangeResponse.data.length > 0) {
@@ -65,6 +76,14 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           setRealChangeData(realChangeResponse);
         } else {
           console.error('获取的真实涨跌数据为空');
+        }
+        
+        // 确保返回的指数数据有效
+        if (indexRealChangeResponse && indexRealChangeResponse.data && indexRealChangeResponse.data.length > 0) {
+          console.log('成功获取沪深300指数真实涨跌数据:', indexRealChangeResponse.data.length, '条');
+          setIndexRealChangeData(indexRealChangeResponse);
+        } else {
+          console.error('获取的沪深300指数真实涨跌数据为空');
         }
       } catch (error) {
         console.error('获取真实涨跌数据失败:', error);
@@ -92,6 +111,10 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
     
     // 创建真实涨跌数据数组
     let realChangeValues = [];
+    let indexRealChangeValues = [];
+    let comparativeChangeValues = [];
+    
+    // 处理个股真实涨跌数据
     if (realChangeData && realChangeData.data) {
       const realChangeDataArray = realChangeData.data;
       realChangeValues = sortedData.map(item => {
@@ -106,6 +129,29 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         console.log('真实涨跌数据已加载:', realChangeValues.length, '条');
       }
     }
+    
+    // 处理沪深300指数真实涨跌数据
+    if (indexRealChangeData && indexRealChangeData.data && indexRealChangeData.data.length > 0) {
+      const indexRealChangeDataArray = indexRealChangeData.data;
+      indexRealChangeValues = sortedData.map(item => {
+        const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
+        // 确保将指数真实涨跌值转换为数字类型并乘以100
+        return matchingItem ? parseFloat(matchingItem.real_change) * 100 : 0;
+      });
+      console.log('沪深300指数真实涨跌数据已加载:', indexRealChangeValues.length, '条');
+    } else {
+      // 如果没有指数数据，将指数涨跌值设为0
+      indexRealChangeValues = sortedData.map(() => 0);
+      console.warn('沪深300指数真实涨跌数据为空或无效，指数涨跌值将设为0');
+    }
+    
+    // 计算对比涨跌值（个股真实涨跌 - 沪深300指数真实涨跌）
+    comparativeChangeValues = realChangeValues.map((value, index) => {
+      const indexValue = indexRealChangeValues[index] || 0;
+      return value - indexValue;
+    });
+    
+    console.log('对比涨跌数据已计算:', comparativeChangeValues.length, '条');
 
     const option = {
       title: {
@@ -131,12 +177,14 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           const high = sortedData[index].high;
           const volume = sortedData[index].volume;
           
-          // 获取真实涨跌数据
+          // 获取真实涨跌数据和对比涨跌数据
           let realChange = '暂无数据';
           let comparativeChange = '暂无数据';
           if (realChangeValues && realChangeValues.length > index) {
             realChange = realChangeValues[index].toFixed(2) + '%';
-            comparativeChange = realChangeValues[index].toFixed(2) + '%';
+          }
+          if (comparativeChangeValues && comparativeChangeValues.length > index) {
+            comparativeChange = comparativeChangeValues[index].toFixed(2) + '%';
           }
 
           return `
@@ -324,9 +372,6 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           xAxisIndex: 2,
           yAxisIndex: 2,
           data: realChangeValues,
-          label: {
-            show: false
-          },
           smooth: true,
           itemStyle: {
             color: function(params) {
@@ -373,17 +418,15 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         // 添加对比涨跌图表
         {
           name: '对比涨跌',
-          type: 'line',
+          type: 'bar',  // 将'line'改为'bar'
           xAxisIndex: 3,
           yAxisIndex: 3,
-          data: realChangeValues,  // 暂时使用与真实涨跌相同的数据
+          data: comparativeChangeValues,
           label: {
             show: false
           },
-          smooth: true,
           itemStyle: {
             color: function(params) {
-              // 涨跌颜色：涨为红色，跌为绿色
               return params.value >= 0 ? '#c23531' : '#3fbf67';
             }
           },
@@ -420,7 +463,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
       // 触发事件，通知其他图表
       window.dispatchEvent(event);
     });
-  }, [data, realChangeData, theme, title]);
+  }, [data, realChangeData, indexRealChangeData, theme, title]);
 
   return (
     <div>
