@@ -56,7 +56,14 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           start_date: data.data[0]?.date,
           end_date: data.data[data.data.length - 1]?.date
         });
-        setRealChangeData(realChangeResponse);
+        
+        // 确保返回的数据有效
+        if (realChangeResponse && realChangeResponse.data && realChangeResponse.data.length > 0) {
+          console.log('成功获取真实涨跌数据:', realChangeResponse.data.length, '条');
+          setRealChangeData(realChangeResponse);
+        } else {
+          console.error('获取的真实涨跌数据为空');
+        }
       } catch (error) {
         console.error('获取真实涨跌数据失败:', error);
       }
@@ -87,8 +94,15 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
       const realChangeDataArray = realChangeData.data;
       realChangeValues = sortedData.map(item => {
         const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        return matchingItem ? matchingItem.real_change : 0;
+        // 确保将真实涨跌值转换为数字类型
+        return matchingItem ? parseFloat(matchingItem.real_change) : 0;
       });
+      // 确保真实涨跌数据有效
+      if (realChangeValues.length === 0 || realChangeValues.every(val => val === 0)) {
+        console.warn('真实涨跌数据为空或全为0，请检查数据源');
+      } else {
+        console.log('真实涨跌数据已加载:', realChangeValues.length, '条');
+      }
     }
 
     const option = {
@@ -114,6 +128,12 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           const low = sortedData[index].low;
           const high = sortedData[index].high;
           const volume = sortedData[index].volume;
+          
+          // 获取真实涨跌数据
+          let realChange = '暂无数据';
+          if (realChangeValues && realChangeValues.length > index) {
+            realChange = realChangeValues[index].toFixed(2) + '%';
+          }
 
           return `
             <div style="padding: 5px">
@@ -123,6 +143,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
               <p style="margin: 0">最低: ${parseFloat(low).toFixed(2)}</p>
               <p style="margin: 0">最高: ${parseFloat(high).toFixed(2)}</p>
               <p style="margin: 0">成交量: ${formatLargeNumber(volume)}</p>
+              <p style="margin: 0">真实涨跌: ${realChange}</p>
             </div>
           `;
         }
@@ -271,6 +292,24 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
               // 涨跌颜色：涨为红色，跌为绿色
               return params.value >= 0 ? '#c23531' : '#3fbf67';
             }
+          },
+          // 添加标签显示数值
+          label: {
+            show: true,
+            position: function(params) {
+              // 根据值的正负决定标签位置
+              return params.value >= 0 ? 'top' : 'bottom';
+            },
+            formatter: function(params) {
+              // 格式化为保留两位小数的百分比
+              return params.value.toFixed(2) + '%';
+            },
+            fontSize: 10,
+            distance: 5,
+            color: function(params) {
+              // 标签颜色与柱状图一致
+              return params.value >= 0 ? '#c23531' : '#3fbf67';
+            }
           }
         }
       ]
@@ -288,7 +327,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
       // 触发事件，通知其他图表
       window.dispatchEvent(event);
     });
-  }, [data, theme, title]);
+  }, [data, realChangeData, theme, title]);
 
   return (
     <div 

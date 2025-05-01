@@ -100,6 +100,7 @@ const StockKlineDemo = () => {
           <KLineChart 
             data={klineData} 
             title={stockInfo ? `${stockInfo.name} (${symbol}) K线图` : `股票 ${symbol} K线图`}
+            symbol={symbol}
           />
         )}
       </Card>
