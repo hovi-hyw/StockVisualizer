@@ -171,12 +171,24 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           // 获取真实涨跌数据和对比涨跌数据
           let realChange = '暂无数据';
           let comparativeChange = '暂无数据';
+          let referenceName = '无参考';
+          let referenceIndex = '';
+          
           if (realChangeValues && realChangeValues.length > index) {
             realChange = realChangeValues[index].toFixed(2) + '%';
           }
           if (comparativeChangeValues && comparativeChangeValues.length > index) {
             comparativeChange = comparativeChangeValues[index].toFixed(2) + '%';
           }
+          if (referenceNames && referenceNames.length > index) {
+            referenceName = referenceNames[index];
+          }
+          if (referenceIndices && referenceIndices.length > index) {
+            referenceIndex = referenceIndices[index];
+          }
+          
+          // 格式化参考指数显示
+          const referenceText = referenceIndex ? `${referenceName}（${referenceIndex}）` : referenceName;
 
           return `
             <div style="padding: 5px">
@@ -188,6 +200,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
               <p style="margin: 0">成交额: ${(parseFloat(sortedData[index].amount)/1000000).toFixed(2)}百万</p>
               <p style="margin: 0">真实涨跌: ${realChange}</p>
               <p style="margin: 0">对比涨跌: ${comparativeChange}</p>
+              <p style="margin: 0">参考指数: ${referenceText}</p>
             </div>
           `;
         }
