@@ -66,24 +66,15 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         // 获取个股真实涨跌数据
         const realChangeResponse = await getStockRealChange(symbol, dateParams);
         
-        // 获取沪深300指数真实涨跌数据
-        const indexSymbol = '000300'; // 沪深300指数代码
-        const indexRealChangeResponse = await getIndexRealChange(indexSymbol, dateParams);
+        // 不再需要单独获取沪深300指数真实涨跌数据，因为后端已经返回了对比涨跌数据和参考指数信息
         
         // 确保返回的数据有效
         if (realChangeResponse && realChangeResponse.data && realChangeResponse.data.length > 0) {
           console.log('成功获取真实涨跌数据:', realChangeResponse.data.length, '条');
           setRealChangeData(realChangeResponse);
+          // 不再需要单独设置指数数据，因为对比涨跌数据已经包含在realChangeResponse中
         } else {
           console.error('获取的真实涨跌数据为空');
-        }
-        
-        // 确保返回的指数数据有效
-        if (indexRealChangeResponse && indexRealChangeResponse.data && indexRealChangeResponse.data.length > 0) {
-          console.log('成功获取沪深300指数真实涨跌数据:', indexRealChangeResponse.data.length, '条');
-          setIndexRealChangeData(indexRealChangeResponse);
-        } else {
-          console.error('获取的沪深300指数真实涨跌数据为空');
         }
       } catch (error) {
         console.error('获取真实涨跌数据失败:', error);
@@ -111,47 +102,47 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
     
     // 创建真实涨跌数据数组
     let realChangeValues = [];
-    let indexRealChangeValues = [];
     let comparativeChangeValues = [];
+    let referenceNames = [];
+    let referenceIndices = [];
     
-    // 处理个股真实涨跌数据
+    // 处理真实涨跌数据和对比涨跌数据
     if (realChangeData && realChangeData.data) {
       const realChangeDataArray = realChangeData.data;
+      
+      // 提取真实涨跌值
       realChangeValues = sortedData.map(item => {
         const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
         // 确保将真实涨跌值转换为数字类型并乘以100
         return matchingItem ? parseFloat(matchingItem.real_change) * 100 : 0;
       });
+      
+      // 提取对比涨跌值（直接从后端获取，不需要前端计算）
+      comparativeChangeValues = sortedData.map(item => {
+        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
+        // 确保将对比涨跌值转换为数字类型并乘以100
+        return matchingItem ? parseFloat(matchingItem.comparative_change) * 100 : 0;
+      });
+      
+      // 提取参考指数名称和代码
+      referenceNames = sortedData.map(item => {
+        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
+        return matchingItem ? matchingItem.reference_name || '无参考' : '无参考';
+      });
+      
+      referenceIndices = sortedData.map(item => {
+        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
+        return matchingItem ? matchingItem.reference_index || '' : '';
+      });
+      
       // 确保真实涨跌数据有效
       if (realChangeValues.length === 0 || realChangeValues.every(val => val === 0)) {
         console.warn('真实涨跌数据为空或全为0，请检查数据源');
       } else {
         console.log('真实涨跌数据已加载:', realChangeValues.length, '条');
+        console.log('对比涨跌数据已加载:', comparativeChangeValues.length, '条');
       }
     }
-    
-    // 处理沪深300指数真实涨跌数据
-    if (indexRealChangeData && indexRealChangeData.data && indexRealChangeData.data.length > 0) {
-      const indexRealChangeDataArray = indexRealChangeData.data;
-      indexRealChangeValues = sortedData.map(item => {
-        const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
-        // 确保将指数真实涨跌值转换为数字类型并乘以100
-        return matchingItem ? parseFloat(matchingItem.real_change) * 100 : 0;
-      });
-      console.log('沪深300指数真实涨跌数据已加载:', indexRealChangeValues.length, '条');
-    } else {
-      // 如果没有指数数据，将指数涨跌值设为0
-      indexRealChangeValues = sortedData.map(() => 0);
-      console.warn('沪深300指数真实涨跌数据为空或无效，指数涨跌值将设为0');
-    }
-    
-    // 计算对比涨跌值（个股真实涨跌 - 沪深300指数真实涨跌）
-    comparativeChangeValues = realChangeValues.map((value, index) => {
-      const indexValue = indexRealChangeValues[index] || 0;
-      return value - indexValue;
-    });
-    
-    console.log('对比涨跌数据已计算:', comparativeChangeValues.length, '条');
 
     const option = {
       title: {

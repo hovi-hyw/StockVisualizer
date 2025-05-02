@@ -124,7 +124,7 @@ async def get_stock_real_change(
         db: 数据库会话
 
     Returns:
-        Dict[str, Any]: 包含真实涨跌数据的字典
+        Dict[str, Any]: 包含真实涨跌数据和对比涨跌数据的字典
     """
     try:
         # 解析日期
@@ -187,15 +187,76 @@ async def get_stock_real_change(
             if date_str:
                 real_change_map[date_str] = real_change_value
         
-        # 为每个日期获取对应的real_change值
+        # 获取股票信息，用于查找每年对应的指数代码
+        stock_info_query = """
+        SELECT symbol, name, index_2020, index_2021, index_2022, index_2023, index_2024
+        FROM stock_info
+        WHERE symbol = :symbol
+        """
+        
+        stock_info = db.execute(text(stock_info_query), {"symbol": used_symbol or symbol}).fetchone()
+        
+        if not stock_info:
+            # 尝试不同的股票代码格式
+            if (used_symbol or symbol).startswith('sh') or (used_symbol or symbol).startswith('sz') or (used_symbol or symbol).startswith('bj'):
+                # 尝试去掉前缀
+                alt_symbol = (used_symbol or symbol)[2:]
+                stock_info = db.execute(text(stock_info_query), {"symbol": alt_symbol}).fetchone()
+            else:
+                # 尝试添加前缀
+                for prefix in ['sh', 'sz', 'bj']:
+                    alt_symbol = f"{prefix}{used_symbol or symbol}"
+                    stock_info = db.execute(text(stock_info_query), {"symbol": alt_symbol}).fetchone()
+                    if stock_info:
+                        break
+        
+        # 为每个日期获取对应的real_change值和对比涨跌值
         data = []
         for item in kline_data["data"]:
             date_str = item["date"]
+            date_obj = date.fromisoformat(date_str)
+            year = date_obj.year
+            
+            # 获取该年份对应的指数代码
+            index_column = f"index_{year}"
+            index_symbol = None
+            reference_name = "无参考"
+            comparative_change = 0.0
+            
             # 如果映射中有该日期的数据，使用映射中的值，否则使用0
             real_change = real_change_map.get(date_str, 0)
+            
+            # 如果股票信息存在且年份在2020-2024范围内
+            if stock_info and 2020 <= year <= 2024:
+                # 获取对应年份的指数代码
+                index_idx = year - 2020 + 2  # index_2020在位置2，index_2021在位置3，以此类推
+                if index_idx < len(stock_info) and stock_info[index_idx]:
+                    index_symbol = stock_info[index_idx]
+                    
+                    # 查询指数的real_change数据
+                    index_query = """
+                    SELECT di.symbol, di.date, di.real_change, ii.name
+                    FROM derived_index di
+                    LEFT JOIN index_info ii ON di.symbol = ii.symbol
+                    WHERE di.symbol = :index_symbol AND di.date = :date
+                    """
+                    
+                    index_result = db.execute(text(index_query), {
+                        "index_symbol": index_symbol,
+                        "date": date_obj
+                    }).fetchone()
+                    
+                    if index_result:
+                        index_real_change = float(index_result[2]) if index_result[2] is not None else 0
+                        comparative_change = real_change - index_real_change
+                        reference_name = index_result[3] if index_result[3] else f"指数{index_symbol}"
+            
             data.append({
                 "date": date_str,
-                "real_change": real_change
+                "real_change": real_change,
+                "comparative_change": comparative_change,
+                "reference_index": index_symbol or "",
+                "reference_name": reference_name
             })
         
         return {
