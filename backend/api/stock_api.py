@@ -189,7 +189,7 @@ async def get_stock_real_change(
         
         # 获取股票信息，用于查找每年对应的指数代码
         stock_info_query = """
-        SELECT symbol, name, index_2020, index_2021, index_2022, index_2023, index_2024
+        SELECT symbol, name, index_2020, index_2021, index_2022, index_2023, index_2024, index_2025
         FROM stock_info
         WHERE symbol = :symbol
         """
@@ -226,8 +226,8 @@ async def get_stock_real_change(
             # 如果映射中有该日期的数据，使用映射中的值，否则使用0
             real_change = real_change_map.get(date_str, 0)
             
-            # 如果股票信息存在且年份在2020-2024范围内
-            if stock_info and 2020 <= year <= 2024:
+            # 如果股票信息存在且年份在2020-2025范围内
+            if stock_info and 2020 <= year <= 2025:
                 # 获取对应年份的指数代码
                 index_idx = year - 2020 + 2  # index_2020在位置2，index_2021在位置3，以此类推
                 if index_idx < len(stock_info) and stock_info[index_idx]:
