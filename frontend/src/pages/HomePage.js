@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Button, Typography, Divider, Space, List, Spin } from 'antd';
 import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined } from '@ant-design/icons';
 import MarketHotspot from '../components/MarketHotspot';
+import MarketNewsCard from '../components/MarketNewsCard';
 import { getMarketIndices } from '../services/marketService';
 
 const { Title, Paragraph, Text } = Typography;
@@ -42,8 +43,8 @@ const HomePage = () => {
         }
         setError(null);
       } catch (err) {
-        console.error('获取市场指数数据失败:', err);
-        setError('获取市场数据失败，显示的是模拟数据');
+        console.error('非交易日，无法获取实时数据:', err);
+        setError('非交易日，无法获取实时数据');
       } finally {
         setLoading(false);
       }
@@ -206,30 +207,7 @@ const HomePage = () => {
               <MarketHotspot />
             </Col>
             <Col xs={24} lg={12}>
-              <Card
-                title={<Title level={4}>市场资讯</Title>}
-                className="news-card"
-                bordered={false}
-              >
-                <List
-                  itemLayout="horizontal"
-                  dataSource={[
-                    { title: '央行发布2023年第四季度货币政策执行报告', date: '2023-02-28' },
-                    { title: '两市震荡上行，创业板指涨超1%', date: '2023-02-28' },
-                    { title: '证监会：进一步深化资本市场改革', date: '2023-02-27' },
-                    { title: '新能源汽车板块持续走强，多股涨停', date: '2023-02-27' },
-                    { title: '外资连续三日净流入A股市场', date: '2023-02-26' }
-                  ]}
-                  renderItem={(item) => (
-                    <List.Item>
-                      <List.Item.Meta
-                        title={<a href="#">{item.title}</a>}
-                        description={item.date}
-                      />
-                    </List.Item>
-                  )}
-                />
-              </Card>
+              <MarketNewsCard />
             </Col>
           </Row>
         </div>

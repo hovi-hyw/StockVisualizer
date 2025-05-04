@@ -4,11 +4,13 @@
  * 显示当前市场热门行业和概念板块。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
+ * 更新: 2025-03-17 - 添加实时数据获取功能
  */
 
-import React from 'react';
-import { Card, List, Tag, Typography, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, List, Tag, Typography, Space, Spin, Alert } from 'antd';
 import { FireOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
+import { getHotIndustries, getConceptSectors } from '../services/marketDataService';
 
 const { Title, Text } = Typography;
 
@@ -17,22 +19,42 @@ const { Title, Text } = Typography;
  * @returns {JSX.Element} 市场热点组件
  */
 const MarketHotspot = () => {
-  // 模拟数据 - 实际应用中应从API获取
-  const hotIndustries = [
-    { name: '新能源', change: '+3.25%', hot: 95 },
-    { name: '半导体', change: '+2.87%', hot: 92 },
-    { name: '人工智能', change: '+2.56%', hot: 90 },
-    { name: '医药生物', change: '+1.78%', hot: 85 },
-    { name: '消费电子', change: '+1.45%', hot: 82 },
-  ];
+  // 状态管理
+  const [hotIndustries, setHotIndustries] = useState([]);
+  const [hotConcepts, setHotConcepts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const hotConcepts = [
-    { name: '光伏设备', change: '+4.12%', hot: 98 },
-    { name: '储能技术', change: '+3.65%', hot: 94 },
-    { name: '芯片国产化', change: '+3.21%', hot: 93 },
-    { name: '智能驾驶', change: '+2.35%', hot: 88 },
-    { name: '元宇宙', change: '-0.87%', hot: 80 },
-  ];
+  // 获取实时数据
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // 并行获取热门行业和概念板块数据
+        const [industriesData, conceptsData] = await Promise.all([
+          getHotIndustries(),
+          getConceptSectors()
+        ]);
+        
+        setHotIndustries(industriesData);
+        setHotConcepts(conceptsData);
+        setError(null);
+      } catch (err) {
+        console.error('获取市场热点数据失败:', err);
+        setError('获取市场热点数据失败，请稍后再试');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // 设置定时刷新（每5分钟刷新一次）
+    const intervalId = setInterval(fetchData, 5 * 60 * 1000);
+    
+    // 组件卸载时清除定时器
+    return () => clearInterval(intervalId);
+  }, []);
 
   // 根据涨跌幅返回不同颜色
   const getChangeColor = (change) => {
@@ -45,6 +67,31 @@ const MarketHotspot = () => {
     if (hot >= 80) return 'orange';
     return 'gold';
   };
+
+  // 渲染加载状态
+  if (loading) {
+    return (
+      <div className="market-hotspot">
+        <Space direction="vertical" size="large" style={{ width: '100%', textAlign: 'center', padding: '20px' }}>
+          <Spin tip="加载市场热点数据中..." />
+        </Space>
+      </div>
+    );
+  }
+
+  // 渲染错误状态
+  if (error) {
+    return (
+      <div className="market-hotspot">
+        <Alert
+          message="数据加载错误"
+          description={error}
+          type="error"
+          showIcon
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="market-hotspot">
@@ -65,6 +112,11 @@ const MarketHotspot = () => {
                       {item.change.startsWith('+') ? <RiseOutlined /> : <FallOutlined />} {item.change}
                     </Text>
                     <Tag color={getHotTagColor(item.hot)}>热度 {item.hot}</Tag>
+                    {item.leader && (
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        领涨: {item.leader} {item.leader_change}
+                      </Text>
+                    )}
                   </Space>
                 </div>
               </List.Item>
@@ -88,6 +140,11 @@ const MarketHotspot = () => {
                       {item.change.startsWith('+') ? <RiseOutlined /> : <FallOutlined />} {item.change}
                     </Text>
                     <Tag color={getHotTagColor(item.hot)}>热度 {item.hot}</Tag>
+                    {item.leader && (
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        领涨: {item.leader} {item.leader_change}
+                      </Text>
+                    )}
                   </Space>
                 </div>
               </List.Item>
