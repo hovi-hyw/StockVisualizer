@@ -10,9 +10,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Button, Typography, Divider, Space, List, Spin } from 'antd';
-import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined } from '@ant-design/icons';
+import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined, FileTextOutlined, GithubOutlined } from '@ant-design/icons';
 import MarketHotspot from '../components/MarketHotspot';
 import MarketNewsCard from '../components/MarketNewsCard';
+import ContactAuthor from '../components/ContactAuthor';
 import { getMarketIndices } from '../services/marketService';
 
 const { Title, Paragraph, Text } = Typography;
@@ -213,13 +214,36 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* 关于我们区域 */}
+      {/* 底部链接区域 */}
       <div className="about-section">
-        <Title level={2} className="section-title">关于平台</Title>
-        <Paragraph className="about-text">
-          股票数据可视化系统是一个专业的金融数据分析平台，致力于为投资者提供全面、直观的市场数据和分析工具。
-          我们整合了多种数据源，提供实时的股票价格、交易量、技术指标和市场指数，帮助您做出更明智的投资决策。
-        </Paragraph>
+        <Title level={2} className="section-title">更多信息</Title>
+        <Row gutter={[24, 24]} style={{ marginTop: '20px' }}>
+          <Col xs={24} sm={8}>
+            <Card hoverable>
+              <div style={{ textAlign: 'center' }}>
+                <ContactAuthor />
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card hoverable>
+              <div style={{ textAlign: 'center' }}>
+                <Button type="link" icon={<FileTextOutlined />}>
+                  <Link to="/docs">使用帮助</Link>
+                </Button>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card hoverable>
+              <div style={{ textAlign: 'center' }}>
+                <Button type="link" icon={<GithubOutlined />}>
+                  <a href="https://github.com/akfamily/akshare" target="_blank" rel="noopener noreferrer">数据来源</a>
+                </Button>
+              </div>
+            </Card>
+          </Col>
+        </Row>
       </div>
     </div>
   );
