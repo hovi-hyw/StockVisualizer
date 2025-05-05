@@ -42,10 +42,19 @@ const MarkdownViewer = ({ filePath }) => {
     try {
       // 处理文件路径，确保能正确加载
       // 如果路径以/docs/开头，则是相对于public目录的路径
-      const fullPath = path.startsWith('/docs/') ? path : path;
+      // 在开发环境中，public目录下的文件可以直接通过根路径访问
+      const fullPath = path;
+      
+      console.log('尝试加载文档:', fullPath);
       
       // 使用axios获取文档内容
-      const response = await axios.get(fullPath);
+      const response = await axios.get(fullPath, {
+        // 添加时间戳防止缓存
+        params: { t: new Date().getTime() },
+        // 确保正确处理文本文件
+        responseType: 'text'
+      });
+      
       setContent(response.data);
     } catch (err) {
       console.error('加载文档失败:', err);

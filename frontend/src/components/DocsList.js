@@ -6,8 +6,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { List, Card, Typography, Spin } from 'antd';
+import { List, Card, Typography, Spin, Alert } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
+import { getDocsList } from '../services/docsService';
 
 const { Title } = Typography;
 
@@ -19,19 +20,28 @@ const { Title } = Typography;
  */
 const DocsList = ({ onSelectDoc }) => {
   // 文档列表数据
-  const [docs, setDocs] = useState([
-    { name: 'README', path: '/docs/README.md' },
-    { name: 'API文档', path: '/docs/api_documentation.md' },
-    { name: '组件文档', path: '/docs/component_documentation.md' },
-    { name: '数据库文档', path: '/docs/database_documentation.md' },
-    { name: '部署指南', path: '/docs/deployment_guide.md' },
-    { name: '开发环境指南', path: '/docs/dev_environment_guide.md' },
-    { name: '开发者手册', path: '/docs/developer_manual.md' },
-    { name: '环境配置指南', path: '/docs/env_config_guide.md' },
-    { name: 'UI样式指南', path: '/docs/ui_style_guide.md' },
-    { name: '用户手册', path: '/docs/user_manual.md' }
-  ]);
-  const [loading, setLoading] = useState(false);
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // 加载文档列表
+  useEffect(() => {
+    const fetchDocs = async () => {
+      try {
+        setLoading(true);
+        const docsList = await getDocsList();
+        setDocs(docsList);
+        setError(null);
+      } catch (err) {
+        console.error('加载文档列表失败:', err);
+        setError('无法加载文档列表，请稍后再试');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDocs();
+  }, []);
 
   return (
     <div className="docs-list">
@@ -41,6 +51,10 @@ const DocsList = ({ onSelectDoc }) => {
           <div style={{ textAlign: 'center', padding: '20px' }}>
             <Spin size="large" />
           </div>
+        ) : error ? (
+          <Alert type="error" message={error} />
+        ) : docs.length === 0 ? (
+          <Alert type="info" message="未找到文档文件，请确认public/docs目录中包含.md文件" />
         ) : (
           <List
             itemLayout="horizontal"
