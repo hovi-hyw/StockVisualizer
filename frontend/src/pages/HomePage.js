@@ -9,12 +9,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Button, Typography, Divider, Space, List, Spin } from 'antd';
-import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined, FileTextOutlined, GithubOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Statistic, Button, Typography, Divider, Space, List, Spin, Input, message } from 'antd';
+import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined, FileTextOutlined, GithubOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import MarketHotspot from '../components/MarketHotspot';
 import MarketNewsCard from '../components/MarketNewsCard';
 import ContactAuthor from '../components/ContactAuthor';
 import { getMarketIndices } from '../services/marketService';
+import { getStockList } from '../services/stockService';
+
+const { Search } = Input;
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -32,7 +35,78 @@ const HomePage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // 股票搜索相关状态
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
+  // 搜索股票结果
+  const [favoriteStocks, setFavoriteStocks] = useState([]);
+  
+  
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favoriteStocks');
+    if (savedFavorites) {
+      try {
+        setFavoriteStocks(JSON.parse(savedFavorites));
+      } catch (e) {
+        console.error('解析自选股数据失败:', e);
+      }
+    }
+  }, []);
+
+  
+  const searchStocks = async (value) => {
+    if (!value.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+    
+    setSearching(true);
+    setShowSearchResults(true);
+    
+    try {
+      const savedFavorites = localStorage.getItem('favoriteStocks');
+      const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+      
+      
+      const filtered = favorites.filter(item => 
+        item.symbol.includes(value) || 
+        item.name.includes(value)
+      );
+      
+      if (filtered.length > 0) {
+        setSearchResults(filtered);
+      } else {
+        setSearchResults([]);
+        message.info('未找到相关自选股');
+      }
+    } catch (error) {
+      console.error('搜索自选股失败:', error);
+      message.error('搜索失败，请稍后重试');
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+  
+  // 点击页面其他区域关闭搜索结果
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSearchResults(false);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+  
   // 获取市场指数数据
   useEffect(() => {
     const fetchMarketIndices = async () => {
@@ -80,35 +154,37 @@ const HomePage = () => {
       {/* 功能卡片区域 */}
       <div className="features-section">
         <Title level={2} className="section-title">核心功能</Title>
-        <Row gutter={[24, 24]}>
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="feature-card" hoverable>
-              <StockOutlined className="feature-icon" />
-              <Title level={4}>实时股票数据</Title>
-              <Paragraph>获取最新的股票价格、交易量和市值数据，助您实时掌握市场动态</Paragraph>
-              <Button type="link">
-                <Link to="/stocks">查看股票 →</Link>
-              </Button>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="feature-card" hoverable>
+        <Row gutter={[24, 24]} style={{ width: '90%', margin: '0 auto' }}>
+          <Col xs={24} sm={12} lg={12}>
+            <Card 
+              className="feature-card" 
+              hoverable 
+              onClick={() => {
+                window.location.href = '/stocks';
+              }}
+            >
               <AreaChartOutlined className="feature-icon" />
               <Title level={4}>专业K线图表</Title>
               <Paragraph>通过专业的K线图表和技术指标，深入分析股票历史表现和未来趋势</Paragraph>
-              <Button type="link">
-                <Link to="/stock-kline-demo">体验K线图 →</Link>
-              </Button>
+              <div style={{ textAlign: 'right' }}>
+                <Button type="link">查看股票 →</Button>
+              </div>
             </Card>
           </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="feature-card" hoverable>
+          <Col xs={24} sm={12} lg={12}>
+            <Card 
+              className="feature-card" 
+              hoverable 
+              onClick={() => {
+                window.location.href = '/indices';
+              }}
+            >
               <FundOutlined className="feature-icon" />
               <Title level={4}>市场指数追踪</Title>
               <Paragraph>关注主要市场指数变化，把握整体市场走势和行业板块表现</Paragraph>
-              <Button type="link">
-                <Link to="/indices">查看指数 →</Link>
-              </Button>
+              <div style={{ textAlign: 'right' }}>
+                <Button type="link">查看指数 →</Button>
+              </div>
             </Card>
           </Col>
         </Row>
