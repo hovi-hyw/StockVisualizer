@@ -22,11 +22,6 @@ const Footer = () => {
     <AntFooter className="app-footer">
       <div className="footer-content">
         <p>股票数据可视化系统 &copy; {currentYear}</p>
-        <p>
-          <a href="#">关于我们</a> | 
-          <a href="#">使用帮助</a> | 
-          <a href="#">数据来源</a>
-        </p>
       </div>
     </AntFooter>
   );
