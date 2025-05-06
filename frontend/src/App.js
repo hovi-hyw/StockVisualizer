@@ -54,7 +54,6 @@ const AppWithTheme = () => {
               <Route path="/stocks" element={<StockPage />} />
               <Route path="/indices" element={<IndexPage />} />
               <Route path="/detail/:type/:symbol" element={<DetailPage />} />
-              <Route path="/stock-kline-demo" element={<StockKlineDemo />} />
               <Route path="/docs" element={<DocsPage />} />
             </Routes>
           </Content>
