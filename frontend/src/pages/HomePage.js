@@ -151,44 +151,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* 功能卡片区域 */}
-      <div className="features-section">
-        <Title level={2} className="section-title">核心功能</Title>
-        <Row gutter={[24, 24]} style={{ width: '90%', margin: '0 auto' }}>
-          <Col xs={24} sm={12} lg={12}>
-            <Card 
-              className="feature-card" 
-              hoverable 
-              onClick={() => {
-                window.location.href = '/stocks';
-              }}
-            >
-              <AreaChartOutlined className="feature-icon" />
-              <Title level={4}>专业K线图表</Title>
-              <Paragraph>通过专业的K线图表和技术指标，深入分析股票历史表现和未来趋势</Paragraph>
-              <div style={{ textAlign: 'right' }}>
-                <Button type="link">查看股票 →</Button>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={12}>
-            <Card 
-              className="feature-card" 
-              hoverable 
-              onClick={() => {
-                window.location.href = '/indices';
-              }}
-            >
-              <FundOutlined className="feature-icon" />
-              <Title level={4}>市场指数追踪</Title>
-              <Paragraph>关注主要市场指数变化，把握整体市场走势和行业板块表现</Paragraph>
-              <div style={{ textAlign: 'right' }}>
-                <Button type="link">查看指数 →</Button>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      </div>
 
       {/* 市场概览区域 */}
       <div className="market-overview-section">

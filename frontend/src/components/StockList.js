@@ -245,12 +245,13 @@ const StockList = () => {
       title: '股票代码',
       dataIndex: 'symbol',
       key: 'symbol',
-      render: (text) => <Link to={`/detail/stock/${text}`}>{text}</Link>,
+      render: (text) => <Link to={`/detail/stock/${text}`} style={{ color: 'var(--link-color)' }}>{text}</Link>,
     },
     {
       title: '股票名称',
       dataIndex: 'name',
       key: 'name',
+      render: (text, record) => <Link to={`/detail/stock/${record.symbol}`} style={{ color: 'var(--link-color)' }}>{text}</Link>,
     },
     {
       title: '最新价',

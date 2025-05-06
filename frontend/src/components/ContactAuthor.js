@@ -52,7 +52,7 @@ const ContactAuthor = () => {
           如有问题或建议，请通过以下方式联系我。
         </Paragraph>
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <Button type="primary" href="mailto:author@example.com">
+          <Button type="primary" href="mailto:hovi_hyw@qq.com">
             发送邮件
           </Button>
         </div>

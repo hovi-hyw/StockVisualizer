@@ -31,7 +31,9 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
   useEffect(() => {
     // 初始化图表
     if (chartRef.current) {
-      chartInstance.current = echarts.init(chartRef.current, theme);
+      // 根据当前主题初始化图表
+      const currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+      chartInstance.current = echarts.init(chartRef.current, currentTheme);
       
       // 将图表添加到stockCharts组，实现联动
       echarts.connect('stockCharts');
@@ -46,6 +48,28 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         window.removeEventListener('resize', resizeHandler);
         chartInstance.current.dispose();
       };
+    }
+  }, []);
+  
+  // 监听主题变化，重新初始化图表
+  useEffect(() => {
+    if (chartInstance.current) {
+      const currentTheme = theme === 'dark' ? 'dark' : 'light';
+      // 如果当前主题与图表主题不一致，重新初始化图表
+      const chartTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+      if (chartTheme !== currentTheme) {
+        try {
+          const option = chartInstance.current.getOption();
+          chartInstance.current.dispose();
+          chartInstance.current = echarts.init(chartRef.current, currentTheme);
+          if (option) {
+            chartInstance.current.setOption(option);
+          }
+          echarts.connect('stockCharts');
+        } catch (error) {
+          console.error('重新初始化图表失败:', error);
+        }
+      }
     }
   }, [theme]);
 
