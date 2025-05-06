@@ -3,7 +3,40 @@
 
 .app-layout {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--background-color);
+  transition: background-color 0.3s ease;
+}
+
+/* 主题切换按钮样式 */
+.theme-switch-btn {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+.theme-switch-btn:hover {
+  transform: scale(1.1);
+}
+
+/* 信息图标样式 */
+.info-icon {
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-color, rgba(0, 0, 0, 0.45));
+  transition: color 0.3s;
+}
+
+.info-icon:hover {
+  color: #1890ff;
+}
+
+/* 暗色模式下的样式调整 - 使用body.dark-theme选择器 */
+body.dark-theme .info-icon {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+body.dark-theme .info-icon:hover {
+  color: #1890ff;
 }
 
 .app-content {
@@ -12,6 +45,585 @@
   min-height: calc(100vh - 70px); /* 只减去footer的高度 */
   transition: all 0.3s ease;
   margin-left: 0 !important;
+}
+
+/* 自定义组件暗色主题样式 */
+body.dark-theme .ant-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-divider {
+  border-color: var(--divider-color);
+}
+
+body.dark-theme .ant-typography {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-list-item {
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-dropdown-menu {
+  background-color: var(--card-background);
+}
+
+body.dark-theme .ant-dropdown-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 自定义组件暗色主题样式 */
+body.dark-theme .market-hotspot-section,
+body.dark-theme .market-news-section,
+body.dark-theme .feature-section,
+body.dark-theme .hero-section,
+body.dark-theme .market-overview-section {
+  background-color: var(--section-background);
+  color: var(--text-color);
+}
+
+/* 市场资讯区域暗色主题样式 */
+body.dark-theme .market-news-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .market-news-card .ant-typography {
+  color: var(--text-color);
+}
+
+/* 热点板块暗色主题样式 */
+body.dark-theme .hotspot-item {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .hotspot-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 确保所有文本在暗色模式下可见 */
+body.dark-theme p,
+body.dark-theme span,
+body.dark-theme h1,
+body.dark-theme h2,
+body.dark-theme h3,
+body.dark-theme h4,
+body.dark-theme h5,
+body.dark-theme h6 {
+  color: var(--text-color);
+}
+
+/* 股票数据卡片暗色主题样式 */
+body.dark-theme .ant-statistic-title,
+body.dark-theme .ant-statistic-content {
+  color: var(--text-color);
+}
+
+/* 市场数据卡片暗色主题样式 */
+body.dark-theme .ant-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+body.dark-theme .ant-card-head {
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-card-head-title {
+  color: var(--text-color);
+}
+
+/* 确保涨跌颜色在暗色模式下保持一致 */
+body.dark-theme .ant-statistic-content-value {
+  color: inherit;
+}
+
+/* 下拉菜单暗色主题样式 */
+body.dark-theme .ant-dropdown-menu,
+body.dark-theme .ant-select-dropdown,
+body.dark-theme .ant-dropdown-open .ant-dropdown-menu {
+  background-color: var(--card-background);
+  box-shadow: var(--card-shadow);
+}
+
+body.dark-theme .ant-dropdown-menu-item,
+body.dark-theme .ant-select-item,
+body.dark-theme .ant-dropdown-menu-title-content {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-dropdown-menu-item:hover,
+body.dark-theme .ant-select-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 自选股下拉菜单样式和内联样式覆盖 */
+body.dark-theme [style*="background: #fff"],
+body.dark-theme [style*="background:#fff"],
+body.dark-theme [style*="background-color: #fff"],
+body.dark-theme [style*="background-color:#fff"],
+body.dark-theme [style*="background: white"],
+body.dark-theme [style*="background:white"],
+body.dark-theme [style*="background-color: white"],
+body.dark-theme [style*="background-color:white"] {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-theme [style*="color: #000"],
+body.dark-theme [style*="color:#000"],
+body.dark-theme [style*="color: black"],
+body.dark-theme [style*="color:black"],
+body.dark-theme [style*="color: #333"],
+body.dark-theme [style*="color:#333"] {
+  color: var(--text-color) !important;
+}
+
+/* 输入框暗色主题样式 */
+body.dark-theme .ant-input,
+body.dark-theme .ant-input-search,
+body.dark-theme .ant-input-affix-wrapper,
+body.dark-theme .ant-input-number,
+body.dark-theme .ant-select-selector,
+body.dark-theme .ant-picker {
+  background-color: var(--input-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-input-search-button {
+  background-color: var(--button-background);
+  border-color: var(--border-color);
+  color: var(--button-text-color);
+}
+
+body.dark-theme .ant-input::placeholder,
+body.dark-theme .ant-select-selection-placeholder {
+  color: var(--input-placeholder-color);
+}
+
+/* 按钮暗色主题样式 - 非主要按钮 */
+body.dark-theme .ant-btn:not(.ant-btn-primary) {
+  background-color: var(--button-background);
+  border-color: var(--border-color);
+  color: var(--button-text-color);
+}
+
+body.dark-theme .ant-btn:hover,
+body.dark-theme .ant-btn:focus {
+  border-color: var(--link-color);
+  color: var(--link-color);
+}
+
+/* 表格暗色主题样式 */
+body.dark-theme .ant-table {
+  background-color: var(--card-background);
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-table-thead > tr > th {
+  background-color: var(--table-header-bg);
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-theme .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-theme .ant-table-tbody > tr:hover > td {
+  background-color: var(--table-row-hover-bg);
+}
+
+/* 分页暗色主题样式 */
+body.dark-theme .ant-pagination-item {
+  background-color: var(--button-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-pagination-item a {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-pagination-item-active {
+  border-color: var(--link-color);
+}
+
+body.dark-theme .ant-pagination-item-active a {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-pagination-prev .ant-pagination-item-link,
+body.dark-theme .ant-pagination-next .ant-pagination-item-link {
+  background-color: var(--button-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-pagination-disabled .ant-pagination-item-link {
+  color: rgba(255, 255, 255, 0.25);
+  border-color: var(--border-color);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .ant-pagination-options .ant-select-selector {
+  background-color: var(--input-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+/* 标签暗色主题样式 */
+body.dark-theme .ant-tag {
+  background-color: var(--tag-background);
+  color: var(--tag-text-color);
+  border-color: var(--border-color);
+}
+
+/* 日期选择器暗色主题样式 */
+body.dark-theme .ant-picker-panel {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-picker-header {
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-picker-header button {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-picker-content th,
+body.dark-theme .ant-picker-content td {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-picker-cell:hover .ant-picker-cell-inner {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: var(--link-color);
+  color: #fff;
+}
+
+body.dark-theme .ant-picker-time-panel {
+  background-color: var(--card-background);
+}
+
+body.dark-theme .ant-picker-time-panel-column > li.ant-picker-time-panel-cell .ant-picker-time-panel-cell-inner {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-picker-time-panel-column > li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner {
+  background-color: var(--link-color);
+  color: #fff;
+}
+
+/* 树形控件暗色主题样式 */
+body.dark-theme .ant-tree {
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-tree-node-content-wrapper:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .ant-tree-node-selected {
+  background-color: rgba(24, 144, 255, 0.2);
+}
+
+body.dark-theme .ant-tree-switcher {
+  color: var(--text-color);
+}
+
+/* 进度条暗色主题样式 */
+body.dark-theme .ant-progress-bg {
+  background-color: var(--link-color);
+}
+
+body.dark-theme .ant-progress-inner {
+  background-color: var(--progress-background);
+}
+
+body.dark-theme .ant-progress-text {
+  color: var(--text-color);
+}
+
+/* 步骤条暗色主题样式 */
+body.dark-theme .ant-steps {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-steps-item-title {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-steps-item-description {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+body.dark-theme .ant-steps-item-wait .ant-steps-item-icon {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-steps-item-process .ant-steps-item-icon {
+  background-color: var(--link-color);
+  border-color: var(--link-color);
+}
+
+body.dark-theme .ant-steps-item-finish .ant-steps-item-icon {
+  background-color: var(--card-background);
+  border-color: var(--link-color);
+}
+
+body.dark-theme .ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+  color: var(--link-color);
+}
+
+/* 滑块暗色主题样式 */
+body.dark-theme .ant-slider-rail {
+  background-color: var(--progress-background);
+}
+
+body.dark-theme .ant-slider-track {
+  background-color: var(--link-color);
+}
+
+body.dark-theme .ant-slider-handle {
+  border-color: var(--link-color);
+  background-color: var(--card-background);
+}
+
+body.dark-theme .ant-slider-mark-text {
+  color: var(--text-color);
+}
+
+/* 开关暗色主题样式 */
+body.dark-theme .ant-switch {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-theme .ant-switch-checked {
+  background-color: var(--link-color);
+}
+
+/* 评分暗色主题样式 */
+body.dark-theme .ant-rate {
+  color: #fadb14;
+}
+
+body.dark-theme .ant-rate-text {
+  color: var(--text-color);
+}
+
+/* 徽章暗色主题样式 */
+body.dark-theme .ant-badge-count {
+  background-color: #ff4d4f;
+  color: #fff;
+  box-shadow: 0 0 0 1px var(--card-background);
+}
+
+body.dark-theme .ant-badge-status-text {
+  color: var(--text-color);
+}
+
+/* 提示框暗色主题样式 */
+body.dark-theme .ant-tooltip-inner {
+  background-color: var(--tooltip-background);
+  color: var(--tooltip-text-color);
+}
+
+body.dark-theme .ant-tooltip-arrow-content {
+  background-color: var(--tooltip-background);
+}
+
+/* 弹出窗口暗色主题样式 */
+body.dark-theme .ant-modal-content,
+body.dark-theme .ant-modal-header {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-modal-title,
+body.dark-theme .ant-modal-close {
+  color: var(--text-color);
+}
+
+/* 警告框和消息提示暗色主题样式 */
+body.dark-theme .ant-message-notice-content,
+body.dark-theme .ant-notification-notice {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+/* 确保所有图标在暗色模式下可见 */
+body.dark-theme .anticon {
+  color: inherit;
+}
+
+/* 确保所有弹出菜单在暗色模式下正确显示 */
+body.dark-theme .ant-popover-inner {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-popover-arrow-content {
+  background-color: var(--card-background);
+}
+
+body.dark-theme .ant-popover-title {
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+/* 标签页暗色主题样式 */
+body.dark-theme .ant-tabs {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-tabs-tab {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.dark-theme .ant-tabs-tab:hover {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-tabs-tab-active {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-tabs-ink-bar {
+  background-color: var(--link-color);
+}
+
+body.dark-theme .ant-tabs-nav-wrap {
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-tabs-content {
+  color: var(--text-color);
+}
+
+/* 菜单暗色主题样式 */
+body.dark-theme .ant-menu {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-menu-item {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-menu-item:hover {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-menu-item-selected {
+  color: var(--link-color);
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+body.dark-theme .ant-menu-submenu-title {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-menu-submenu-title:hover {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-menu-submenu-selected {
+  color: var(--link-color);
+}
+
+/* 确保所有警告和错误信息在暗色模式下正确显示 */
+body.dark-theme .ant-alert {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-alert-message,
+body.dark-theme .ant-alert-description {
+  color: var(--text-color);
+}
+
+/* 图表暗色主题样式 */
+body.dark-theme .recharts-surface,
+body.dark-theme .recharts-default-tooltip {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+body.dark-theme .recharts-tooltip-item-name,
+body.dark-theme .recharts-tooltip-item-value,
+body.dark-theme .recharts-legend-item-text {
+  color: var(--text-color) !important;
+}
+
+body.dark-theme .recharts-cartesian-axis-tick-value,
+body.dark-theme .recharts-radial-bar-background-sector {
+  fill: var(--text-color) !important;
+}
+
+body.dark-theme .recharts-cartesian-grid-horizontal line,
+body.dark-theme .recharts-cartesian-grid-vertical line {
+  stroke: var(--border-color) !important;
+}
+
+/* 抽屉组件暗色主题样式 */
+body.dark-theme .ant-drawer-content {
+  background-color: var(--card-background);
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-drawer-header {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-drawer-title {
+  color: var(--text-color);
+}
+
+body.dark-theme .ant-drawer-close {
+  color: var(--text-color);
+}
+
+/* 折叠面板暗色主题样式 */
+body.dark-theme .ant-collapse {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-collapse-header {
+  color: var(--text-color) !important;
+}
+
+body.dark-theme .ant-collapse-content {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+body.dark-theme .ant-collapse-item {
+  border-color: var(--border-color);
 }
 
 /* 左侧导航栏已移除 */
@@ -39,4 +651,66 @@
   display: block;
   transition: all 0.3s ease;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 加载状态暗色主题样式 */
+body.dark-theme .ant-spin {
+  color: var(--link-color);
+}
+
+body.dark-theme .ant-spin-dot-item {
+  background-color: var(--link-color);
+}
+
+body.dark-theme .ant-spin-text {
+  color: var(--text-color);
+}
+
+/* 骨架屏暗色主题样式 */
+body.dark-theme .ant-skeleton-title,
+body.dark-theme .ant-skeleton-paragraph > li,
+body.dark-theme .ant-skeleton-avatar,
+body.dark-theme .ant-skeleton-button,
+body.dark-theme .ant-skeleton-input,
+body.dark-theme .ant-skeleton-image {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 自定义股票相关组件暗色主题样式 */
+body.dark-theme .stock-card,
+body.dark-theme .stock-detail-card,
+body.dark-theme .stock-chart-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+body.dark-theme .stock-price-up {
+  color: #f5222d;
+}
+
+body.dark-theme .stock-price-down {
+  color: #52c41a;
+}
+
+body.dark-theme .stock-list-item {
+  border-color: var(--border-color);
+}
+
+body.dark-theme .stock-list-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .stock-search-result {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+body.dark-theme .stock-search-result-item {
+  color: var(--text-color);
+}
+
+body.dark-theme .stock-search-result-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }

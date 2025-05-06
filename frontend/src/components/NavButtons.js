@@ -7,11 +7,13 @@
  * Date: 2025-03-12
  */
 
-import React, { useState, useEffect } from 'react';
-import { Button, Space, Dropdown, Input, List, Typography, Modal, message } from 'antd';
-import { HomeOutlined, LineChartOutlined, FundOutlined, StarOutlined, PlusOutlined, MinusOutlined, SearchOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { Button, Space, Dropdown, Input, List, Typography, Modal, message, Tooltip } from 'antd';
+import { HomeOutlined, LineChartOutlined, FundOutlined, StarOutlined, PlusOutlined, MinusOutlined, SearchOutlined, BulbOutlined, BulbFilled, ExportOutlined } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 import { getStockList } from '../services/stockService';
+import { getIndexList } from '../services/indexService';
+import { useTheme } from '../contexts/ThemeContext';
 
 /**
  * 导航按钮组件
@@ -20,6 +22,7 @@ import { getStockList } from '../services/stockService';
 const NavButtons = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { theme: currentTheme, toggleTheme } = useTheme();
   
   // 自选股相关状态
   const [favoriteVisible, setFavoriteVisible] = useState(false);
@@ -28,6 +31,10 @@ const NavButtons = () => {
   const [searchText, setSearchText] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searchType, setSearchType] = useState('stock'); // 'stock' 或 'index'
+  
+  // 搜索框引用
+  const searchInputRef = useRef(null);
 
   // 从本地存储加载自选股
   useEffect(() => {
@@ -48,16 +55,21 @@ const NavButtons = () => {
   };
 
   // 添加自选股
-  const addToFavorites = (stock) => {
-    if (!favoriteStocks.some(item => item.symbol === stock.symbol)) {
-      const newFavorites = [...favoriteStocks, stock];
+  const addToFavorites = (item) => {
+    if (!favoriteStocks.some(stock => stock.symbol === item.symbol)) {
+      // 确保添加type属性，用于区分股票和指数
+      const itemWithType = {
+        ...item,
+        type: searchType // 'stock' 或 'index'
+      };
+      const newFavorites = [...favoriteStocks, itemWithType];
       saveFavorites(newFavorites);
-      message.success(`已添加 ${stock.name} 到自选股`);
+      message.success(`已添加 ${item.name} 到自选股`);
       setSearchVisible(false);
       setSearchText('');
       setSearchResults([]);
     } else {
-      message.info(`${stock.name} 已在自选股中`);
+      message.info(`${item.name} 已在自选股中`);
     }
   };
 
@@ -68,39 +80,95 @@ const NavButtons = () => {
     message.success('已从自选股中移除');
   };
 
-  // 搜索股票
-  const searchStocks = async () => {
+  // 搜索股票或指数
+  const searchItems = async () => {
     if (!searchText.trim()) {
-      message.info('请输入股票代码或名称');
+      message.info(`请输入${searchType === 'stock' ? '股票' : '指数'}代码或名称`);
       return;
     }
     
     setSearching(true);
     try {
-      const response = await getStockList({
-        search: searchText,
-        page_size: 10,
-        page: 1
-      });
+      let response;
+      
+      if (searchType === 'stock') {
+        response = await getStockList({
+          search: searchText,
+          page_size: 10,
+          page: 1
+        });
+      } else {
+        response = await getIndexList({
+          search: searchText,
+          page_size: 10,
+          page: 1
+        });
+      }
       
       if (response && response.items) {
         setSearchResults(response.items);
       } else {
         setSearchResults([]);
-        message.info('未找到相关股票');
+        message.info(`未找到相关${searchType === 'stock' ? '股票' : '指数'}`);
       }
     } catch (error) {
-      console.error('搜索股票失败:', error);
+      console.error(`搜索${searchType === 'stock' ? '股票' : '指数'}失败:`, error);
       message.error('搜索失败，请稍后重试');
       setSearchResults([]);
     } finally {
       setSearching(false);
     }
   };
+  
+  // 导出自选股
+  const exportFavorites = () => {
+    if (favoriteStocks.length === 0) {
+      message.info('暂无自选股可导出');
+      return;
+    }
+    
+    // 提取股票代码（去除前缀）和名称
+    const symbols = favoriteStocks.map(item => {
+      // 去除sz、sh、bj前缀
+      const pureSymbol = item.symbol.replace(/^(sz|sh|bj)/, '');
+      return pureSymbol;
+    }).join(',');
+    
+    const names = favoriteStocks.map(item => item.name).join(',');
+    
+    // 创建导出内容
+    const exportContent = `${symbols}\n${names}`;
+    
+    // 创建Blob对象
+    const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+    
+    // 创建下载链接
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '自选股_' + new Date().toISOString().split('T')[0] + '.txt';
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    message.success('自选股导出成功');
+  };
 
   // 自选股下拉内容
   const favoriteContent = (
-    <div style={{ width: 300, padding: '12px', background: '#fff', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)' }}>
+    <div style={{ 
+      width: 300, 
+      padding: '12px', 
+      background: currentTheme === 'dark' ? '#1f1f1f' : '#fff', 
+      color: currentTheme === 'dark' ? '#fff' : '#000',
+      borderRadius: '8px', 
+      boxShadow: currentTheme === 'dark' ? '0 2px 8px rgba(255, 255, 255, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.15)' 
+    }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
         <Typography.Title level={5} style={{ margin: 0 }}>我的自选股</Typography.Title>
         <Space>
@@ -108,7 +176,15 @@ const NavButtons = () => {
             type="primary" 
             size="small" 
             icon={<PlusOutlined />} 
-            onClick={() => setSearchVisible(true)}
+            onClick={() => {
+              setSearchVisible(true);
+              // 使用setTimeout确保DOM已更新
+              setTimeout(() => {
+                if (searchInputRef.current) {
+                  searchInputRef.current.focus();
+                }
+              }, 100);
+            }}
           />
           <Button 
             type="default" 
@@ -129,28 +205,61 @@ const NavButtons = () => {
               }
             }}
           />
+          <Button 
+            type="default" 
+            size="small" 
+            icon={<ExportOutlined />} 
+            disabled={favoriteStocks.length === 0}
+            onClick={exportFavorites}
+          />
         </Space>
       </div>
 
       {/* 搜索框 */}
       {searchVisible && (
         <div style={{ marginBottom: '12px' }}>
+          <div style={{ display: 'flex', marginBottom: '8px' }}>
+            <Button 
+              type={searchType === 'stock' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setSearchType('stock')}
+              style={{ flex: 1, borderRadius: '4px 0 0 4px' }}
+            >
+              股票
+            </Button>
+            <Button 
+              type={searchType === 'index' ? 'primary' : 'default'}
+              size="small"
+              onClick={() => setSearchType('index')}
+              style={{ flex: 1, borderRadius: '0 4px 4px 0' }}
+            >
+              指数
+            </Button>
+          </div>
           <Input.Search
-            placeholder="输入股票代码或名称"
+            ref={searchInputRef}
+            placeholder={`输入${searchType === 'stock' ? '股票' : '指数'}代码或名称`}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            onSearch={searchStocks}
+            onSearch={searchItems}
             loading={searching}
             enterButton
           />
           {searchResults.length > 0 && (
             <List
               size="small"
-              style={{ maxHeight: '200px', overflow: 'auto', marginTop: '8px' }}
+              style={{ 
+                maxHeight: '200px', 
+                overflow: 'auto', 
+                marginTop: '8px',
+                background: currentTheme === 'dark' ? '#1f1f1f' : '#fff',
+                borderColor: currentTheme === 'dark' ? '#444' : '#d9d9d9'
+              }}
               bordered
               dataSource={searchResults}
               renderItem={item => (
                 <List.Item
+                  style={{ borderColor: currentTheme === 'dark' ? '#444' : '#d9d9d9' }}
                   actions={[
                     <Button 
                       type="link" 
@@ -160,8 +269,8 @@ const NavButtons = () => {
                     />
                   ]}
                 >
-                  <Typography.Text>{item.symbol}</Typography.Text>
-                  <Typography.Text style={{ marginLeft: '8px' }}>{item.name}</Typography.Text>
+                  <Typography.Text style={{ color: currentTheme === 'dark' ? '#fff' : 'inherit' }}>{item.symbol}</Typography.Text>
+                  <Typography.Text style={{ marginLeft: '8px', color: currentTheme === 'dark' ? '#fff' : 'inherit' }}>{item.name}</Typography.Text>
                 </List.Item>
               )}
             />
@@ -174,9 +283,14 @@ const NavButtons = () => {
         <List
           size="small"
           bordered
+          style={{ 
+            background: currentTheme === 'dark' ? '#1f1f1f' : '#fff',
+            borderColor: currentTheme === 'dark' ? '#444' : '#d9d9d9'
+          }}
           dataSource={favoriteStocks}
           renderItem={item => (
             <List.Item
+              style={{ borderColor: currentTheme === 'dark' ? '#444' : '#d9d9d9' }}
               actions={[
                 <Button 
                   type="link" 
@@ -187,9 +301,9 @@ const NavButtons = () => {
                 />
               ]}
             >
-              <Link to={`/detail/stock/${item.symbol}`} style={{ display: 'flex', flex: 1 }}>
-                <Typography.Text>{item.symbol}</Typography.Text>
-                <Typography.Text style={{ marginLeft: '8px' }}>{item.name}</Typography.Text>
+              <Link to={`/detail/${item.type || 'stock'}/${item.symbol}`} style={{ display: 'flex', flex: 1, color: currentTheme === 'dark' ? '#fff' : 'inherit' }}>
+                <Typography.Text style={{ color: currentTheme === 'dark' ? '#fff' : 'inherit' }}>{item.symbol}</Typography.Text>
+                <Typography.Text style={{ marginLeft: '8px', color: currentTheme === 'dark' ? '#fff' : 'inherit' }}>{item.name}</Typography.Text>
               </Link>
             </List.Item>
           )}
@@ -208,10 +322,10 @@ const NavButtons = () => {
       top: '20px',
       right: '20px',
       zIndex: 1000,
-      background: 'rgba(255, 255, 255, 0.8)',
+      background: currentTheme === 'dark' ? 'rgba(33, 33, 33, 0.8)' : 'rgba(255, 255, 255, 0.8)',
       padding: '8px',
       borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+      boxShadow: currentTheme === 'dark' ? '0 2px 8px rgba(255, 255, 255, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.15)'
     }}>
       <Space>
         <Button 
@@ -250,6 +364,14 @@ const NavButtons = () => {
             自选股
           </Button>
         </Dropdown>
+        <Tooltip title={currentTheme === 'light' ? '切换到暗色模式' : '切换到明亮模式'}>
+          <Button 
+            type="default"
+            icon={currentTheme === 'light' ? <BulbOutlined /> : <BulbFilled />}
+            size="middle"
+            onClick={toggleTheme}
+          />
+        </Tooltip>
       </Space>
     </div>
   );
