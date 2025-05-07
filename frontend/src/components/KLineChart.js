@@ -178,6 +178,8 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
         axisPointer: {
           type: 'cross'
         },
+        padding: 0,  // 添加这一行来设置tooltip的内边距
+        extraCssText: 'padding: 0;',  // 添加这一行来覆盖默认样式
         formatter: function(params) {
           if (!params || !params[0] || !params[0].data) {
             return '';
@@ -214,8 +216,13 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) 
           // 格式化参考指数显示
           const referenceText = referenceIndex ? `${referenceName}（${referenceIndex}）` : referenceName;
 
+          // 根据当前主题设置tooltip样式
+          const isDarkMode = document.body.classList.contains('dark-theme');
+          const bgColor = isDarkMode ? 'rgba(31, 31, 31, 0.9)' : 'rgba(255, 255, 255, 0.9)';
+          const textColor = isDarkMode ? 'rgba(255, 255, 255, 0.85)' : '#333';
+          
           return `
-            <div style="padding: 5px">
+            <div style="padding: 0; background-color: ${bgColor}; color: ${textColor}; border-radius: 4px;">
               <p style="margin: 0">${formatDate(params[0].axisValue)}</p>
               <p style="margin: 0">开盘: ${parseFloat(open).toFixed(2)}</p>
               <p style="margin: 0">收盘: ${parseFloat(close).toFixed(2)}</p>
