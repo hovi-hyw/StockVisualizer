@@ -24,12 +24,13 @@ async def get_market_indices():
         dict: 包含主要市场指数的实时数据
     """
     try:
-        # 使用akshare获取A股大盘指数实时行情
-        indices_data = ak.stock_zh_index_spot()
+        # 使用akshare获取A股大盘指数实时行情 - 使用新浪财经数据源
+        indices_data = ak.stock_zh_index_spot_sina()
         
         # 提取需要的指数数据
         # 上证指数(000001)、深证成指(399001)、创业板指(399006)、科创50(000688)
-        target_indices = ['000001', '399001', '399006', '000688']
+        target_indices = ['sh000001', 'sz399001', 'sz399006', 'sh000688']
+        code_map = {'sh000001': '000001', 'sz399001': '399001', 'sz399006': '399006', 'sh000688': '000688'}
         result = {}
         
         for index_code in target_indices:
@@ -38,12 +39,13 @@ async def get_market_indices():
             if not index_row.empty:
                 index_data = index_row.iloc[0]
                 # 构建指数数据结构
-                result[index_code] = {
-                    "code": index_code,
+                standard_code = code_map[index_code]
+                result[standard_code] = {
+                    "code": standard_code,
                     "name": index_data.get('名称', ''),
                     "current": float(index_data.get('最新价', 0)),
                     "change": float(index_data.get('涨跌额', 0)),
-                    "change_percent": float(index_data.get('涨跌幅', 0).strip('%')) if isinstance(index_data.get('涨跌幅'), str) else float(index_data.get('涨跌幅', 0)),
+                    "change_percent": float(index_data.get('涨跌幅', 0)),
                     "volume": float(index_data.get('成交量', 0)),
                     "turnover": float(index_data.get('成交额', 0))
                 }
@@ -86,6 +88,7 @@ async def get_hot_industries():
             
             result.append({
                 "name": row.get('板块名称', ''),
+                "code": row.get('代码', ''),  # 添加板块代码字段，用于获取相关个股
                 "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
                 "hot": int(hot_score),
                 "leader": row.get('领涨股', ''),
@@ -124,6 +127,7 @@ async def get_concept_sectors():
             
             result.append({
                 "name": row.get('板块名称', ''),
+                "code": row.get('代码', ''),  # 添加板块代码字段，用于获取相关个股
                 "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
                 "hot": int(hot_score),
                 "leader": row.get('领涨股', ''),
@@ -169,3 +173,79 @@ async def get_market_news():
         print(f"获取市场资讯数据失败: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to fetch market news: {str(e)}")
+
+@router.get("/industry-stocks/{industry_name}", response_model=List[Dict[str, Any]])
+async def get_industry_stocks(industry_name: str):
+    """
+    获取行业板块相关个股数据。
+    返回指定行业板块的相关个股数据列表。
+
+    Args:
+        industry_name: 行业板块名称
+
+    Returns:
+        List[Dict[str, Any]]: 行业相关个股数据列表
+    """
+    try:
+        # 使用akshare获取行业板块成分股数据
+        stocks_data = ak.stock_board_industry_cons_em(symbol=industry_name)
+        
+        result = []
+        for _, row in stocks_data.iterrows():
+            # 提取需要的数据字段
+            change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
+            amplitude = float(row.get('振幅', 0).strip('%')) if isinstance(row.get('振幅'), str) else float(row.get('振幅', 0))
+            
+            result.append({
+                "code": row.get('代码', ''),
+                "name": row.get('名称', ''),
+                "change_percent": change_percent,
+                "amplitude": amplitude,
+                "amount": float(row.get('成交额', 0)),
+                "turnover_rate": float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
+            })
+        
+        return result
+    except Exception as e:
+        import traceback
+        print(f"获取行业板块({industry_name})相关个股数据失败: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to fetch industry stocks: {str(e)}")
+
+@router.get("/concept-stocks/{concept_name}", response_model=List[Dict[str, Any]])
+async def get_concept_stocks(concept_name: str):
+    """
+    获取概念板块相关个股数据。
+    返回指定概念板块的相关个股数据列表。
+
+    Args:
+        concept_name: 概念板块名称
+
+    Returns:
+        List[Dict[str, Any]]: 概念相关个股数据列表
+    """
+    try:
+        # 使用akshare获取概念板块成分股数据
+        stocks_data = ak.stock_board_concept_cons_em(symbol=concept_name)
+        
+        result = []
+        for _, row in stocks_data.iterrows():
+            # 提取需要的数据字段
+            change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
+            amplitude = float(row.get('振幅', 0).strip('%')) if isinstance(row.get('振幅'), str) else float(row.get('振幅', 0))
+            
+            result.append({
+                "code": row.get('代码', ''),
+                "name": row.get('名称', ''),
+                "change_percent": change_percent,
+                "amplitude": amplitude,
+                "amount": float(row.get('成交额', 0)),
+                "turnover_rate": float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
+            })
+        
+        return result
+    except Exception as e:
+        import traceback
+        print(f"获取概念板块({concept_name})相关个股数据失败: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to fetch concept stocks: {str(e)}")

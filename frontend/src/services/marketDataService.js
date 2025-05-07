@@ -5,6 +5,7 @@
  * Authors: hovi.hyw & AI
  * Date: 2025-03-17
  * 更新: 2025-03-20 - 添加热门个股、昨日热门和个股资金流向API
+ * 更新: 2025-03-27 - 添加获取行业和概念板块相关个股数据的API
  */
 
 import api from './api';
@@ -89,6 +90,36 @@ export const getStockFunds = async () => {
     return response;
   } catch (error) {
     console.error('获取个股资金流向数据失败:', error);
+    throw error;
+  }
+};
+
+/**
+ * 获取行业板块相关个股数据
+ * @param {string} industryName 行业名称
+ * @returns {Promise<Array>} 行业相关个股数据列表
+ */
+export const getIndustryStocks = async (industryName) => {
+  try {
+    const response = await api.get(`/market/industry-stocks/${industryName}`);
+    return response;
+  } catch (error) {
+    console.error(`获取行业(${industryName})相关个股数据失败:`, error);
+    throw error;
+  }
+};
+
+/**
+ * 获取概念板块相关个股数据
+ * @param {string} conceptName 概念名称
+ * @returns {Promise<Array>} 概念相关个股数据列表
+ */
+export const getConceptStocks = async (conceptName) => {
+  try {
+    const response = await api.get(`/market/concept-stocks/${conceptName}`);
+    return response;
+  } catch (error) {
+    console.error(`获取概念(${conceptName})相关个股数据失败:`, error);
     throw error;
   }
 };
