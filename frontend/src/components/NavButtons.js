@@ -36,6 +36,23 @@ const NavButtons = () => {
   // 搜索框引用
   const searchInputRef = useRef(null);
 
+  // 自选股下拉菜单打开时重新加载数据
+  const handleFavoriteVisibleChange = (visible) => {
+    setFavoriteVisible(visible);
+    
+    // 当打开下拉菜单时，重新从localStorage加载最新的自选股数据
+    if (visible) {
+      const savedFavorites = localStorage.getItem('favoriteStocks');
+      if (savedFavorites) {
+        try {
+          setFavoriteStocks(JSON.parse(savedFavorites));
+        } catch (e) {
+          console.error('解析自选股数据失败:', e);
+        }
+      }
+    }
+  };
+
   // 从本地存储加载自选股
   useEffect(() => {
     const savedFavorites = localStorage.getItem('favoriteStocks');
@@ -349,17 +366,16 @@ const NavButtons = () => {
         >
           <Link to="/indices">指数</Link>
         </Button>
-        <Dropdown 
-          overlay={favoriteContent} 
-          trigger={['click']} 
-          visible={favoriteVisible}
-          onVisibleChange={setFavoriteVisible}
+        <Dropdown
+          open={favoriteVisible}
+          onOpenChange={handleFavoriteVisibleChange}
+          overlay={favoriteContent}
           placement="bottomRight"
         >
-          <Button 
-            type={favoriteVisible ? 'primary' : 'default'}
+          <Button
+            type={currentPath === '/favorites' ? 'primary' : 'default'}
             icon={<StarOutlined />}
-            size="middle"
+            onClick={() => setFavoriteVisible(!favoriteVisible)}
           >
             自选股
           </Button>

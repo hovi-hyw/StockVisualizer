@@ -10,30 +10,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Row, 
-  Col, 
-  Card, 
-  Statistic, 
-  Button, 
-  Typography, 
-  Divider, 
-  Space, 
-  List, 
-  Spin, 
-  Input, 
-  message, 
-  Tag,
-  Tooltip
-} from 'antd';
-import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, StockOutlined, AreaChartOutlined, FileTextOutlined, GithubOutlined, SearchOutlined, PlusOutlined, FireOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Statistic, Button, Typography, Space, List, Spin, message, Tag, Tooltip } from 'antd';
+import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, FileTextOutlined, GithubOutlined, PlusOutlined, FireOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import ContactAuthor from '../components/ContactAuthor';
 import { getMarketIndices } from '../services/marketService';
-import { getStockList } from '../services/stockService';
 import { getHotIndustries, getConceptSectors, getIndustryStocks, getConceptStocks } from '../services/marketDataService';
 import { formatLargeNumber } from '../utils/formatters';
-
-const { Search } = Input;
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -52,14 +34,7 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // 股票搜索相关状态
-  const [searchText, setSearchText] = useState('');
-  const [debouncedSearchText, setDebouncedSearchText] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-
-  // 搜索股票结果
+  // 自选股状态
   const [favoriteStocks, setFavoriteStocks] = useState([]);
   
   // 热门行业和概念板块状态
@@ -90,55 +65,6 @@ const HomePage = () => {
     }
   }, []);
 
-  
-  const searchStocks = async (value) => {
-    if (!value.trim()) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
-    
-    setSearching(true);
-    setShowSearchResults(true);
-    
-    try {
-      const savedFavorites = localStorage.getItem('favoriteStocks');
-      const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-      
-      
-      const filtered = favorites.filter(item => 
-        item.symbol.includes(value) || 
-        item.name.includes(value)
-      );
-      
-      if (filtered.length > 0) {
-        setSearchResults(filtered);
-      } else {
-        setSearchResults([]);
-        message.info('未找到相关自选股');
-      }
-    } catch (error) {
-      console.error('搜索自选股失败:', error);
-      message.error('搜索失败，请稍后重试');
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
-  
-  // 点击页面其他区域关闭搜索结果
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowSearchResults(false);
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-  
   // 检查是否在交易时间内（9:00-16:00）
   const isTradeTime = () => {
     const now = new Date();
@@ -692,9 +618,35 @@ const HomePage = () => {
                         {industryStocks.map((stock, index) => (
                           <tr key={stock.code} style={{ borderBottom: '1px solid #f0f0f0' }}>
                             <td style={{ padding: '8px 4px' }}>
-                              <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
-                                <Text strong>{stock.name}</Text>
-                              </Link>
+                              <Space>
+                                <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
+                                  <Text strong>{stock.name}</Text>
+                                </Link>
+                                <Button 
+                                  type="text" 
+                                  icon={<PlusOutlined />} 
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const savedFavorites = localStorage.getItem('favoriteStocks');
+                                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                                    // 创建包含完整股票代码的对象
+                                    const stockWithFullCode = {
+                                      ...stock,
+                                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+                                    };
+                                    if (!favorites.some(item => item.code === stock.code)) {
+                                      favorites.push(stockWithFullCode);
+                                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                                      setFavoriteStocks(favorites);
+                                      message.success(`已将${stock.name}添加到自选股`);
+                                    } else {
+                                      message.info(`${stock.name}已在自选股中`);
+                                    }
+                                  }}
+                                />
+                              </Space>
                             </td>
                             <td style={{ padding: '8px 4px' }}>
                               <Text type="secondary">{stock.code}</Text>
@@ -883,9 +835,35 @@ const HomePage = () => {
                         {conceptStocks.map((stock, index) => (
                           <tr key={stock.code} style={{ borderBottom: '1px solid #f0f0f0' }}>
                             <td style={{ padding: '8px 4px' }}>
-                              <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
-                                <Text strong>{stock.name}</Text>
-                              </Link>
+                              <Space>
+                                <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
+                                  <Text strong>{stock.name}</Text>
+                                </Link>
+                                <Button 
+                                  type="text" 
+                                  icon={<PlusOutlined />} 
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const savedFavorites = localStorage.getItem('favoriteStocks');
+                                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                                    // 创建包含完整股票代码的对象
+                                    const stockWithFullCode = {
+                                      ...stock,
+                                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+                                    };
+                                    if (!favorites.some(item => item.code === stock.code)) {
+                                      favorites.push(stockWithFullCode);
+                                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                                      setFavoriteStocks(favorites);
+                                      message.success(`已将${stock.name}添加到自选股`);
+                                    } else {
+                                      message.info(`${stock.name}已在自选股中`);
+                                    }
+                                  }}
+                                />
+                              </Space>
                             </td>
                             <td style={{ padding: '8px 4px' }}>
                               <Text type="secondary">{stock.code}</Text>
@@ -933,7 +911,7 @@ const HomePage = () => {
             <Card hoverable>
               <div style={{ textAlign: 'center' }}>
                 <Button type="link" icon={<FileTextOutlined />}>
-                  <Link to="/docs">使用帮助</Link>
+                  <a href="/dao.html" target="_blank">交易之道</a>
                 </Button>
               </div>
             </Card>
