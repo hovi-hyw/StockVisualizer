@@ -29,7 +29,11 @@ const HomePage = () => {
     '000001': { name: '上证指数', current: 0, change_percent: 0 },
     '399001': { name: '深证成指', current: 0, change_percent: 0 },
     '399006': { name: '创业板指', current: 0, change_percent: 0 },
-    '000688': { name: '科创50', current: 0, change_percent: 0 }
+    '000688': { name: '科创50', current: 0, change_percent: 0 },
+    '000300': { name: '沪深300', current: 0, change_percent: 0 },
+    '399005': { name: '中小板指', current: 0, change_percent: 0 },
+    'HSCEI': { name: '恒生互联', current: 0, change_percent: 0 },
+    'HSTECH': { name: '中概互联', current: 0, change_percent: 0 }
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -373,86 +377,28 @@ const HomePage = () => {
         <Title level={2} className="section-title">市场概览</Title>
         {error && <div style={{ color: 'orange', marginBottom: '10px' }}>{error}</div>}
         <Row gutter={[24, 24]}>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <Spin size="small" />
-                </div>
-              ) : (
-                <Statistic 
-                  title={marketIndices['000001']?.name || '上证指数'} 
-                  value={marketIndices['000001']?.current || 0} 
-                  precision={2}
-                  valueStyle={{ 
-                    color: marketIndices['000001']?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
-                  }}
-                  prefix={marketIndices['000001']?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                  suffix={`${marketIndices['000001']?.change_percent >= 0 ? '+' : ''}${marketIndices['000001']?.change_percent.toFixed(2)}%`}
-                />
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <Spin size="small" />
-                </div>
-              ) : (
-                <Statistic 
-                  title={marketIndices['399001']?.name || '深证成指'} 
-                  value={marketIndices['399001']?.current || 0} 
-                  precision={2}
-                  valueStyle={{ 
-                    color: marketIndices['399001']?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
-                  }}
-                  prefix={marketIndices['399001']?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                  suffix={`${marketIndices['399001']?.change_percent >= 0 ? '+' : ''}${marketIndices['399001']?.change_percent.toFixed(2)}%`}
-                />
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <Spin size="small" />
-                </div>
-              ) : (
-                <Statistic 
-                  title={marketIndices['399006']?.name || '创业板指'} 
-                  value={marketIndices['399006']?.current || 0} 
-                  precision={2}
-                  valueStyle={{ 
-                    color: marketIndices['399006']?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
-                  }}
-                  prefix={marketIndices['399006']?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                  suffix={`${marketIndices['399006']?.change_percent >= 0 ? '+' : ''}${marketIndices['399006']?.change_percent.toFixed(2)}%`}
-                />
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Card>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '20px' }}>
-                  <Spin size="small" />
-                </div>
-              ) : (
-                <Statistic 
-                  title={marketIndices['000688']?.name || '科创50'} 
-                  value={marketIndices['000688']?.current || 0} 
-                  precision={2}
-                  valueStyle={{ 
-                    color: marketIndices['000688']?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
-                  }}
-                  prefix={marketIndices['000688']?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                  suffix={`${marketIndices['000688']?.change_percent >= 0 ? '+' : ''}${marketIndices['000688']?.change_percent.toFixed(2)}%`}
-                />
-              )}
-            </Card>
-          </Col>
+          {Object.entries(marketIndices).map(([code, data]) => (
+            <Col xs={24} sm={12} md={6} key={code}>
+              <Card>
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <Spin size="small" />
+                  </div>
+                ) : (
+                  <Statistic 
+                    title={data?.name} 
+                    value={data?.current || 0} 
+                    precision={2}
+                    valueStyle={{ 
+                      color: data?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
+                    }}
+                    prefix={data?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
+                    suffix={`${data?.change_percent >= 0 ? '+' : ''}${data?.change_percent.toFixed(2)}%`}
+                  />
+                )}
+              </Card>
+            </Col>
+          ))}
         </Row>
         
         {/* 市场热点区域 - 热门行业和概念板块 */}
