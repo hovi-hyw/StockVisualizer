@@ -16,7 +16,9 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import HomePage from './pages/HomePage';
 import StockPage from './pages/StockPage';
 import IndexPage from './pages/IndexPage';
+import ETFListPage from './pages/ETFListPage';
 import DetailPage from './pages/DetailPage';
+import ETFDetailPage from './pages/ETFDetailPage';
 import DocsPage from './pages/DocsPage';
 
 // 导入布局组件
@@ -53,6 +55,8 @@ const AppWithTheme = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/stocks" element={<StockPage />} />
               <Route path="/indices" element={<IndexPage />} />
+              <Route path="/etfs" element={<ETFListPage />} />
+              <Route path="/detail/etf/:symbol" element={<ETFDetailPage />} />
               <Route path="/detail/:type/:symbol" element={<DetailPage />} />
               <Route path="/docs" element={<DocsPage />} />
             </Routes>

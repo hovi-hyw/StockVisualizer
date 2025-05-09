@@ -460,24 +460,161 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     # 执行查询
     kline_data = pd.read_sql(text(query), db.bind, params=params)
 
+    # 确定参考指数（根据指数代码前缀判断市场）
+    if symbol.startswith("000"):
+        # 以"000"开头的指数代码多为上证系指数
+        reference_index = "000001"
+        reference_name = "上证综指"
+    elif symbol.startswith("399"):
+        # 以"399"开头的指数代码多为深证系指数
+        reference_index = "399001"
+        reference_name = "深证综指"
+    else:
+        # 其他情况使用沪深300作为参考
+        reference_index = "000300"
+        reference_name = "沪深300"
+
     # 转换为适合ECharts的格式
     result = []
     for _, row in kline_data.iterrows():
         result.append({
-            "date": row["date"].strftime("%Y-%m-%d"),
+            "symbol": symbol,  # Add symbol field
+            "date": row["date"],  # Pass date object directly
             "open": float(row["open"]),
             "close": float(row["close"]),
             "high": float(row["high"]),
             "low": float(row["low"]),
-            "volume": float(row["volume"]),
+            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,  # Ensure volume is int
             "amount": float(row["amount"]) if pd.notna(row["amount"]) else None,
             "amplitude": float(row["amplitude"]) if pd.notna(row["amplitude"]) else None,
             "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
             "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
             "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None
+            # Removed reference_index and reference_name as they are not in ETFData model
         })
 
     return result
+
+
+def get_etf_kline_data(db: Session, symbol: str, start_date: date = None, end_date: date = None):
+    """
+    获取ETF K线数据。
+
+    Args:
+        db (Session): 数据库会话
+        symbol (str): ETF代码
+        start_date (date, optional): 开始日期，默认为None（获取所有数据）
+        end_date (date, optional): 结束日期，默认为None（获取所有数据）
+
+    Returns:
+        list: ETF K线数据列表
+    """
+    # 构建查询
+    query = """
+    SELECT symbol, date, open, close, high, low, volume, amount, 
+           amplitude, change_rate, change_amount, turnover_rate
+    FROM daily_etf
+    WHERE symbol = :symbol
+    """
+    
+    # 如果提供了日期范围，添加日期条件
+    params = {"symbol": symbol}
+    if start_date and end_date:
+        query += " AND date BETWEEN :start_date AND :end_date"
+        params["start_date"] = start_date
+        params["end_date"] = end_date
+    
+    query += " ORDER BY date"
+
+    # 执行查询
+    kline_data = pd.read_sql(text(query), db.bind, params=params)
+
+    # 确定参考指数（根据ETF代码前缀判断市场）
+    if symbol.startswith("159"):
+        # 以"159"开头的ETF代码为深交所ETF
+        reference_index = "399001"
+        reference_name = "深证综指"
+    elif symbol.startswith("510") or symbol.startswith("511") or symbol.startswith("512"):
+        # 以"51"开头的ETF代码为上交所ETF
+        reference_index = "000001"
+        reference_name = "上证综指"
+    else:
+        # 其他情况使用沪深300作为参考
+        reference_index = "000300"
+        reference_name = "沪深300"
+
+    # 转换为适合ECharts的格式
+    result = []
+    for _, row in kline_data.iterrows():
+        result.append({
+            "symbol": symbol,  # Add symbol field
+            "date": row["date"],  # Pass date object directly
+            "open": float(row["open"]),
+            "close": float(row["close"]),
+            "high": float(row["high"]),
+            "low": float(row["low"]),
+            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,  # Ensure volume is int
+            "amount": float(row["amount"]) if pd.notna(row["amount"]) else None,
+            "amplitude": float(row["amplitude"]) if pd.notna(row["amplitude"]) else None,
+            "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
+            "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
+            "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None
+            # Removed reference_index and reference_name as they are not in ETFData model
+        })
+
+    return result
+
+
+def get_etf_info(db: Session, symbol: str):
+    """
+    获取ETF基本信息。
+
+    Args:
+        db (Session): 数据库会话
+        symbol (str): ETF代码
+
+    Returns:
+        dict: ETF基本信息
+    """
+    # 从etf_info表获取ETF名称
+    name_query = """
+    SELECT name FROM etf_info WHERE symbol = :symbol
+    """
+    name_result = db.execute(text(name_query), {"symbol": symbol}).fetchone()
+    
+    if not name_result:
+        return None
+    
+    # 获取最新的ETF日线数据
+    latest_data_query = """
+    SELECT * FROM daily_etf 
+    WHERE symbol = :symbol 
+    ORDER BY date DESC LIMIT 1
+    """
+    latest_data = db.execute(text(latest_data_query), {"symbol": symbol}).fetchone()
+    
+    if not latest_data:
+        return {
+            "symbol": symbol,
+            "name": name_result[0]
+        }
+    
+    # 构建返回结果
+    return {
+        "symbol": symbol,
+        "name": name_result[0],
+        "latest_date": latest_data.date,
+        "open": float(latest_data.open) if latest_data.open else None,
+        "close": float(latest_data.close) if latest_data.close else None,
+        "high": float(latest_data.high) if latest_data.high else None,
+        "low": float(latest_data.low) if latest_data.low else None,
+        "volume": int(latest_data.volume) if latest_data.volume else None,
+        "amount": float(latest_data.amount) if latest_data.amount else None,
+        "amplitude": float(latest_data.amplitude) if latest_data.amplitude else None,
+        "change_rate": float(latest_data.change_rate) if latest_data.change_rate else None,
+        "change_amount": float(latest_data.change_amount) if latest_data.change_amount else None,
+        "turnover_rate": float(latest_data.turnover_rate) if latest_data.turnover_rate else None
+    }
 
 
 def get_stock_info(db: Session, symbol: str):

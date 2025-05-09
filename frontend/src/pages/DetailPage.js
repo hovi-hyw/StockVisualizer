@@ -41,7 +41,11 @@ const DetailPage = () => {
         setInfo(infoResponse);
         setKlineData(klineResponse);
       } catch (error) {
-        message.error(`获取${type === 'stock' ? '股票' : '指数'}数据失败`);
+        let typeText = '数据';
+        if (type === 'stock') typeText = '股票';
+        else if (type === 'index') typeText = '指数';
+        
+        message.error(`获取${typeText}数据失败`);
         console.error(error);
       } finally {
         setLoading(false);

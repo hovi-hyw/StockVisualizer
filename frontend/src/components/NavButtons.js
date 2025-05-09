@@ -366,6 +366,13 @@ const NavButtons = () => {
         >
           <Link to="/indices">指数</Link>
         </Button>
+        <Button 
+          type={currentPath === '/etfs' ? 'primary' : 'default'}
+          icon={<FundOutlined />}
+          size="middle"
+        >
+          <Link to="/etfs">ETF</Link>
+        </Button>
         <Dropdown
           open={favoriteVisible}
           onOpenChange={handleFavoriteVisibleChange}
