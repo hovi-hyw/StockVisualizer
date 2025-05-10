@@ -1,9 +1,9 @@
 // frontend/src/pages/IndexDetailPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getIndexInfo, getIndexKline } from '../services/indexService'; // 引入 indexService
+import { getIndexInfo, getIndexKline, getIndexRealChange } from '../services/indexService'; // 引入 indexService
 import KLineChart from '../components/KLineChart';
-import { Typography, Alert } from 'antd';
+import { Typography, Alert, Spin } from 'antd';
 
 const { Title } = Typography;
 
@@ -29,6 +29,18 @@ const IndexDetailPage = () => {
                     end_date: '2025-03-12', // 可以根据需要调整
                 });
                 setKlineData(klineDataResponse);
+                
+                // 获取指数对比涨跌数据
+                try {
+                    // 使用相同的日期范围获取对比涨跌数据
+                    await getIndexRealChange(symbol, {
+                        start_date: '2024-01-01',
+                        end_date: '2025-03-12',
+                    });
+                    console.log('指数对比涨跌数据已请求');
+                } catch (compareErr) {
+                    console.warn('获取指数对比涨跌数据失败，但不影响K线图显示:', compareErr);
+                }
             } catch (err) {
                 setError(err.message || '获取数据失败');
                 console.error('获取指数详情或K线数据失败:', err);
@@ -42,12 +54,12 @@ const IndexDetailPage = () => {
 
     return (
         <div className="index-detail-page">
-            {loading && <p>加载中...</p>}
+            {loading && <Spin size="large" className="page-loading" />}
             {error && <Alert message="错误" description={error} type="error" showIcon />}
             {indexInfo && (
                 <>
                     <Title level={2}>{indexInfo.name} ({indexInfo.symbol})</Title>
-                    {klineData && <KLineChart data={klineData} title={`${indexInfo.name} K线图`} />}
+                    {klineData && <KLineChart data={klineData} title={`${indexInfo.name} K线图`} symbol={symbol} type="index" />}
                 </>
             )}
         </div>

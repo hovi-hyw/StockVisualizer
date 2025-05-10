@@ -79,11 +79,12 @@ const DetailPage = () => {
         </Button>
       </div>
       
-      {/* K线图 - 现在包含K线、量能和真实涨跌三个子图表 */}
+      {/* K线图 - 根据类型显示不同的子图表 */}
       <KLineChart 
         data={klineData} 
         title={`${info?.name} (${symbol}) K线图`} 
-        symbol={symbol} 
+        symbol={symbol}
+        type={type} 
       />
 
       {showStockInfo && (

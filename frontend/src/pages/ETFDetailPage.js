@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getETFInfo, getETFKline } from '../services/etfService'; // 引入 etfService
+import { getETFInfo, getETFKline, getETFComparativeChange } from '../services/etfService'; // 引入 etfService
 import KLineChart from '../components/KLineChart';
 import { Typography, Alert, Spin } from 'antd';
 
@@ -33,6 +33,16 @@ const ETFDetailPage = () => {
                 // 获取K线数据
                 const klineDataResponse = await getETFKline(symbol);
                 setKlineData(klineDataResponse);
+                
+                // 获取对比涨跌数据
+                // 注意：这里使用的是同一个接口，因为后端已经在K线数据中包含了参考指数信息
+                // 但在KLineChart组件中，我们需要通过getETFComparativeChange来获取对比涨跌数据
+                try {
+                    await getETFComparativeChange(symbol);
+                    console.log('ETF对比涨跌数据已请求');
+                } catch (compareErr) {
+                    console.warn('获取ETF对比涨跌数据失败，但不影响K线图显示:', compareErr);
+                }
             } catch (err) {
                 setError(err.message || '获取数据失败');
                 console.error('获取ETF详情或K线数据失败:', err);
@@ -51,7 +61,7 @@ const ETFDetailPage = () => {
             {etfInfo && (
                 <>
                     <Title level={2}>{etfInfo.name} ({etfInfo.symbol})</Title>
-                    {klineData && <KLineChart data={klineData} title={`${etfInfo.name} K线图`} symbol={symbol} />}
+                    {klineData && <KLineChart data={klineData} title={`${etfInfo.name} K线图`} symbol={symbol} type="etf" />}
                 </>
             )}
         </div>
