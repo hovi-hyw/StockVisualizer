@@ -9,7 +9,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
-import KLineChart from '../components/KLineChart';
+import StockKLineChart from '../components/StockKLineChart';
+import IndexETFKLineChart from '../components/IndexETFKLineChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 
@@ -80,12 +81,20 @@ const DetailPage = () => {
       </div>
       
       {/* K线图 - 根据类型显示不同的子图表 */}
-      <KLineChart 
-        data={klineData} 
-        title={`${info?.name} (${symbol}) K线图`} 
-        symbol={symbol}
-        type={type} 
-      />
+      {type === 'stock' ? (
+        <StockKLineChart 
+          data={klineData} 
+          title={`${info?.name} (${symbol}) K线图`} 
+          symbol={symbol}
+        />
+      ) : (
+        <IndexETFKLineChart 
+          data={klineData} 
+          title={`${info?.name} (${symbol}) K线图`} 
+          symbol={symbol}
+          type={type}
+        />
+      )}
 
       {showStockInfo && (
         <div style={{ marginTop: '20px', border: '1px solid #eee', padding: '10px' }}>

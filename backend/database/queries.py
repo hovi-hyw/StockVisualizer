@@ -453,11 +453,11 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
         list: 指数K线数据列表
     """
     # 构建查询
-    query = f"""
+    query = """
     SELECT symbol, date, open, close, high, low, volume, amount, 
            amplitude, change_rate, change_amount, turnover_rate
     FROM daily_index
-    WHERE symbol = '{symbol}'
+    WHERE symbol = :symbol
     """
     
     # 如果提供了日期范围，添加日期条件
@@ -486,9 +486,34 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
         reference_index = "000300"
         reference_name = "沪深300"
 
+    # 获取参考指数数据
+    ref_query = """
+    SELECT date, change_rate as ref_change_rate
+    FROM daily_index
+    WHERE symbol = :ref_symbol
+    """
+    if start_date and end_date:
+        ref_query += " AND date BETWEEN :start_date AND :end_date"
+    ref_query += " ORDER BY date"
+    
+    ref_params = {
+        "ref_symbol": reference_index,
+        "start_date": start_date,
+        "end_date": end_date
+    }
+    ref_data = pd.read_sql(text(ref_query), db.bind, params=ref_params)
+    
+    # 将参考指数数据与原始数据合并
+    merged_data = pd.merge(kline_data, ref_data, on='date', how='left')
+
     # 转换为适合ECharts的格式
     result = []
-    for _, row in kline_data.iterrows():
+    for _, row in merged_data.iterrows():
+        # 计算相对涨跌幅
+        relative_change = None
+        if pd.notna(row["change_rate"]) and pd.notna(row["ref_change_rate"]):
+            relative_change = row["change_rate"] - row["ref_change_rate"]
+
         result.append({
             "symbol": symbol,
             "date": row["date"],
@@ -503,7 +528,9 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
             "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
             "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None,
             "reference_index": reference_index,
-            "reference_name": reference_name
+            "reference_name": reference_name,
+            "reference_change_rate": float(row["ref_change_rate"]) if pd.notna(row["ref_change_rate"]) else None,
+            "relative_change_rate": float(relative_change) if relative_change is not None else None
         })
 
     return result
@@ -556,9 +583,34 @@ def get_etf_kline_data(db: Session, symbol: str, start_date: date = None, end_da
         reference_index = "000300"
         reference_name = "沪深300"
 
+    # 获取参考指数数据
+    ref_query = """
+    SELECT date, change_rate as ref_change_rate
+    FROM daily_index
+    WHERE symbol = :ref_symbol
+    """
+    if start_date and end_date:
+        ref_query += " AND date BETWEEN :start_date AND :end_date"
+    ref_query += " ORDER BY date"
+    
+    ref_params = {
+        "ref_symbol": reference_index,
+        "start_date": start_date,
+        "end_date": end_date
+    }
+    ref_data = pd.read_sql(text(ref_query), db.bind, params=ref_params)
+    
+    # 将参考指数数据与原始数据合并
+    merged_data = pd.merge(kline_data, ref_data, on='date', how='left')
+
     # 转换为适合ECharts的格式
     result = []
-    for _, row in kline_data.iterrows():
+    for _, row in merged_data.iterrows():
+        # 计算相对涨跌幅
+        relative_change = None
+        if pd.notna(row["change_rate"]) and pd.notna(row["ref_change_rate"]):
+            relative_change = row["change_rate"] - row["ref_change_rate"]
+
         result.append({
             "symbol": symbol,
             "date": row["date"],
@@ -573,7 +625,9 @@ def get_etf_kline_data(db: Session, symbol: str, start_date: date = None, end_da
             "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
             "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None,
             "reference_index": reference_index,
-            "reference_name": reference_name
+            "reference_name": reference_name,
+            "reference_change_rate": float(row["ref_change_rate"]) if pd.notna(row["ref_change_rate"]) else None,
+            "relative_change_rate": float(relative_change) if relative_change is not None else None
         })
 
     return result

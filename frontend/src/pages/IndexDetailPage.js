@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getIndexInfo, getIndexKline, getIndexChangeRate } from '../services/indexService'; // 引入 indexService
-import KLineChart from '../components/KLineChart';
+import IndexETFKLineChart from '../components/IndexETFKLineChart';
 import { Typography, Alert, Spin } from 'antd';
 
 const { Title } = Typography;
@@ -59,7 +59,7 @@ const IndexDetailPage = () => {
             {indexInfo && (
                 <>
                     <Title level={2}>{indexInfo.name} ({indexInfo.symbol})</Title>
-                    {klineData && <KLineChart data={klineData} title={`${indexInfo.name} K线图`} symbol={symbol} type="index" />}
+                    {klineData && <IndexETFKLineChart data={klineData} title={`${indexInfo.name} K线图`} symbol={symbol} type="index" />}
                 </>
             )}
         </div>
