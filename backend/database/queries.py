@@ -266,7 +266,7 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
     SELECT DISTINCT di.symbol,
            COALESCE(ii.name, 'N/A') as name,  -- 从index_info表获取名称
            first_value(di.close) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as latest_price,
-           first_value(di.change_rate) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as change_percent,
+           first_value(di.change_rate) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as change_rate,
            first_value(di.volume) OVER (PARTITION BY di.symbol ORDER BY di.date DESC) as volume
     FROM daily_index di
     LEFT JOIN index_info ii ON di.symbol = ii.symbol
@@ -308,7 +308,13 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
         has_prev = page > 1
         
         return {
-            "items": indices.to_dict(orient="records"),
+            "items": [{
+                "symbol": row["symbol"],
+                "name": row["name"],
+                "current_price": float(row["latest_price"]) if pd.notna(row["latest_price"]) else None,
+                "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
+                "volume": float(row["volume"]) if pd.notna(row["volume"]) else 0
+            } for _, row in indices.iterrows()],
             "total": total,
             "page_size": page_size,
             "current_page": page,
@@ -370,7 +376,13 @@ def get_index_list(db: Session, page_size: int = 20, cursor: str | None = None, 
                     prev_cursor = prev_result[0]
 
         return {
-            "items": indices.to_dict(orient="records"),
+            "items": [{
+                "symbol": row["symbol"],
+                "name": row["name"],
+                "current_price": float(row["latest_price"]) if pd.notna(row["latest_price"]) else None,
+                "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
+                "volume": float(row["volume"]) if pd.notna(row["volume"]) else 0
+            } for _, row in indices.iterrows()],
             "total": total,
             "page_size": page_size,
             "next_cursor": next_cursor,
@@ -478,19 +490,20 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     result = []
     for _, row in kline_data.iterrows():
         result.append({
-            "symbol": symbol,  # Add symbol field
-            "date": row["date"],  # Pass date object directly
+            "symbol": symbol,
+            "date": row["date"],
             "open": float(row["open"]),
             "close": float(row["close"]),
             "high": float(row["high"]),
             "low": float(row["low"]),
-            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,  # Ensure volume is int
+            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,
             "amount": float(row["amount"]) if pd.notna(row["amount"]) else None,
             "amplitude": float(row["amplitude"]) if pd.notna(row["amplitude"]) else None,
             "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
             "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
-            "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None
-            # Removed reference_index and reference_name as they are not in ETFData model
+            "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None,
+            "reference_index": reference_index,
+            "reference_name": reference_name
         })
 
     return result
@@ -547,19 +560,20 @@ def get_etf_kline_data(db: Session, symbol: str, start_date: date = None, end_da
     result = []
     for _, row in kline_data.iterrows():
         result.append({
-            "symbol": symbol,  # Add symbol field
-            "date": row["date"],  # Pass date object directly
+            "symbol": symbol,
+            "date": row["date"],
             "open": float(row["open"]),
             "close": float(row["close"]),
             "high": float(row["high"]),
             "low": float(row["low"]),
-            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,  # Ensure volume is int
+            "volume": int(row["volume"]) if pd.notna(row["volume"]) else 0,
             "amount": float(row["amount"]) if pd.notna(row["amount"]) else None,
             "amplitude": float(row["amplitude"]) if pd.notna(row["amplitude"]) else None,
             "change_rate": float(row["change_rate"]) if pd.notna(row["change_rate"]) else None,
             "change_amount": float(row["change_amount"]) if pd.notna(row["change_amount"]) else None,
-            "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None
-            # Removed reference_index and reference_name as they are not in ETFData model
+            "turnover_rate": float(row["turnover_rate"]) if pd.notna(row["turnover_rate"]) else None,
+            "reference_index": reference_index,
+            "reference_name": reference_name
         })
 
     return result
