@@ -11,7 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { formatDate, formatLargeNumber } from '../utils/formatters';
 import { getStockRealChange } from '../services/stockService';
-import { getIndexRealChange } from '../services/indexService';
+import { getIndexChangeRate } from '../services/indexService';
 
 /**
  * K线图组件
@@ -104,7 +104,7 @@ const KLineChart = ({ data, title = '股票K线图', theme = 'light', symbol, ty
         } else if (type === 'index' || type === 'etf') {
           // 获取指数或ETF对比涨跌数据
           const indexRealChangeResponse = type === 'index' 
-            ? await getIndexRealChange(symbol, dateParams)
+            ? await getIndexChangeRate(symbol, dateParams)
             : await import('../services/etfService').then(module => module.getETFComparativeChange(symbol, dateParams));
             
           if (indexRealChangeResponse && indexRealChangeResponse.data && indexRealChangeResponse.data.length > 0) {

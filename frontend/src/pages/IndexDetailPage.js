@@ -1,7 +1,7 @@
 // frontend/src/pages/IndexDetailPage.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getIndexInfo, getIndexKline, getIndexRealChange } from '../services/indexService'; // 引入 indexService
+import { getIndexInfo, getIndexKline, getIndexChangeRate } from '../services/indexService'; // 引入 indexService
 import KLineChart from '../components/KLineChart';
 import { Typography, Alert, Spin } from 'antd';
 
@@ -33,7 +33,7 @@ const IndexDetailPage = () => {
                 // 获取指数对比涨跌数据
                 try {
                     // 使用相同的日期范围获取对比涨跌数据
-                    await getIndexRealChange(symbol, {
+                    await getIndexChangeRate(symbol, {
                         start_date: '2024-01-01',
                         end_date: '2025-03-12',
                     });

@@ -70,14 +70,14 @@ export const getIndexKline = async (symbol, params = {}) => {
 };
 
 /**
- * 获取指数真实涨跌数据
+ * 获取指数涨跌幅数据
  * @param {string} symbol - 指数代码
  * @param {Object} params - 请求参数
  * @param {string} params.start_date - 开始日期 (YYYY-MM-DD)
  * @param {string} params.end_date - 结束日期 (YYYY-MM-DD)
- * @returns {Promise<Object>} 指数真实涨跌数据
+ * @returns {Promise<Object>} 指数涨跌幅数据
  */
-export const getIndexRealChange = async (symbol, params = {}) => {
+export const getIndexChangeRate = async (symbol, params = {}) => {
   try {
     // 使用正确的指数API路径格式
     const response = await api.get(`/indices/${symbol}/real-change`, { params });
