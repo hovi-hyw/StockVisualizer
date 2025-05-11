@@ -69,7 +69,8 @@ export const getETFKline = async (symbol, params = {}) => {
  */
 export const getETFComparativeChange = async (symbol, params = {}) => {
   try {
-    // 直接使用K线数据接口，后端已经在K线数据中包含了参考指数信息
+    // 直接使用K线数据接口，后端已经在K线数据中包含了所有需要的信息
+    // 前端可以通过计算change_rate减去reference_change_rate来获取对比涨跌值
     const response = await api.get(`/etfs/${symbol}/kline`, { params });
     return response;
   } catch (error) {

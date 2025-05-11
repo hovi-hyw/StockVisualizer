@@ -536,6 +536,7 @@ def get_index_kline_data(db: Session, symbol: str, start_date: date = None, end_
     return result
 
 
+# ... existing code ...
 def get_etf_kline_data(db: Session, symbol: str, start_date: date = None, end_date: date = None):
     """
     获取ETF K线数据。

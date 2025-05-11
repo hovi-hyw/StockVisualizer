@@ -31,14 +31,19 @@ const ETFDetailPage = () => {
                 setETFInfo(etfInfoResponse);
 
                 // 获取K线数据
-                const klineDataResponse = await getETFKline(symbol);
+                const klineDataResponse = await getETFKline(symbol, {
+                    start_date: '2024-01-01', // 可以根据需要调整
+                    end_date: '2025-03-12', // 可以根据需要调整
+                });
                 setKlineData(klineDataResponse);
                 
                 // 获取对比涨跌数据
-                // 注意：这里使用的是同一个接口，因为后端已经在K线数据中包含了参考指数信息
-                // 但在IndexETFKLineChart组件中，我们需要通过getETFComparativeChange来获取对比涨跌数据
                 try {
-                    await getETFComparativeChange(symbol);
+                    // 使用相同的日期范围获取对比涨跌数据
+                    await getETFComparativeChange(symbol, {
+                        start_date: '2024-01-01',
+                        end_date: '2025-03-12',
+                    });
                     console.log('ETF对比涨跌数据已请求');
                 } catch (compareErr) {
                     console.warn('获取ETF对比涨跌数据失败，但不影响K线图显示:', compareErr);

@@ -103,3 +103,8 @@ async def get_etf_kline(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# 注意：此端点已被移除，因为/etfs/{symbol}/kline接口已经包含了所有需要的数据，包括change_rate和reference_change_rate
+# 前端应直接使用kline接口返回的数据计算对比涨跌（change_rate减去reference_change_rate）
+# 此注释仅作为开发参考，可在确认前端不再使用此接口后删除

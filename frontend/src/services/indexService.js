@@ -79,11 +79,12 @@ export const getIndexKline = async (symbol, params = {}) => {
  */
 export const getIndexChangeRate = async (symbol, params = {}) => {
   try {
-    // 使用正确的指数API路径格式
-    const response = await api.get(`/indices/${symbol}/real-change`, { params });
+    // 直接使用K线数据接口，后端已经在K线数据中包含了所有需要的信息
+    // 前端可以通过计算change_rate减去reference_change_rate来获取对比涨跌值
+    const response = await api.get(`/indices/${symbol}/kline`, { params });
     return response;
   } catch (error) {
-    console.error(`获取指数${symbol}真实涨跌数据失败:`, error);
+    console.error(`获取指数${symbol}涨跌幅数据失败:`, error);
     throw error;
   }
 };

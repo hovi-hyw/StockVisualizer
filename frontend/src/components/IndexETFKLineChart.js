@@ -71,37 +71,18 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
     }
   }, [theme]);
 
-  // 获取对比涨跌数据
+  // 直接使用K线数据计算对比涨跌数据
   useEffect(() => {
-    const fetchRealChangeData = async () => {
-      if (!data || !data.data || data.data.length === 0 || !symbol) return;
-      
-      try {
-        // 获取日期范围
-        const startDate = data.data[0]?.date;
-        const endDate = data.data[data.data.length - 1]?.date;
-        const dateParams = {
-          start_date: startDate,
-          end_date: endDate
-        };
-        
-        // 获取指数或ETF对比涨跌数据
-        const indexRealChangeResponse = type === 'index' 
-          ? await getIndexChangeRate(symbol, dateParams)
-          : await import('../services/etfService').then(module => module.getETFComparativeChange(symbol, dateParams));
-          
-        if (indexRealChangeResponse && indexRealChangeResponse.data && indexRealChangeResponse.data.length > 0) {
-          console.log(`成功获取${type === 'index' ? '指数' : 'ETF'}对比涨跌数据:`, indexRealChangeResponse.data.length, '条');
-          setIndexRealChangeData(indexRealChangeResponse);
-        } else {
-          console.error(`获取的${type === 'index' ? '指数' : 'ETF'}对比涨跌数据为空`);
-        }
-      } catch (error) {
-        console.error(`获取${type}对比涨跌数据失败:`, error);
-      }
-    };
-
-    fetchRealChangeData();
+    if (!data || !data.data || data.data.length === 0 || !symbol) return;
+    
+    try {
+      // 直接使用K线数据，不再单独请求对比涨跌数据
+      // 后端已经在K线数据中包含了所有需要的信息
+      console.log(`使用K线数据计算${type === 'index' ? '指数' : 'ETF'}对比涨跌数据`);
+      setIndexRealChangeData(data);
+    } catch (error) {
+      console.error(`处理${type}对比涨跌数据失败:`, error);
+    }
   }, [data, symbol, type]);
 
   useEffect(() => {
@@ -168,56 +149,29 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
       
       // 对于指数和ETF，直接计算对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
       comparativeChangeValues = sortedData.map(item => {
-        const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
-        if (!matchingItem) return 0;
-        
-        // 检查daily_change或change_rate是否存在且为有效数值
+        // 直接从K线数据中获取change_rate和reference_change_rate
         let dailyChange = 0;
-        // 首先尝试使用change_rate字段（数据库中的实际字段名）
-        if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
-          // 尝试直接使用数值，如果是字符串则解析
-          const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
-            ? matchingItem.change_rate 
-            : parseFloat(matchingItem.change_rate);
+        let referenceChange = 0;
+        
+        // 获取当日涨跌幅(change_rate)
+        if (item.change_rate !== null && item.change_rate !== undefined) {
+          const parsedDailyChange = typeof item.change_rate === 'number' 
+            ? item.change_rate 
+            : parseFloat(item.change_rate);
           
           if (!isNaN(parsedDailyChange)) {
-            dailyChange = parsedDailyChange * 100;
-          }
-        } 
-        // 如果change_rate不存在，则尝试使用daily_change字段（API可能使用的映射字段名）
-        else if (matchingItem.daily_change !== null && matchingItem.daily_change !== undefined) {
-          // 尝试直接使用数值，如果是字符串则解析
-          const parsedDailyChange = typeof matchingItem.daily_change === 'number' 
-            ? matchingItem.daily_change 
-            : parseFloat(matchingItem.daily_change);
-          
-          if (!isNaN(parsedDailyChange)) {
-            dailyChange = parsedDailyChange * 100;
+            dailyChange = parsedDailyChange;
           }
         }
         
-        // 检查reference_change或reference_rate是否存在且为有效数值
-        let referenceChange = 0;
-        // 首先尝试使用reference_rate字段（数据库中的实际字段名）
-        if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
-          // 尝试直接使用数值，如果是字符串则解析
-          const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
-            ? matchingItem.reference_rate 
-            : parseFloat(matchingItem.reference_rate);
+        // 获取参考指数涨跌幅(reference_change_rate)
+        if (item.reference_change_rate !== null && item.reference_change_rate !== undefined) {
+          const parsedReferenceChange = typeof item.reference_change_rate === 'number' 
+            ? item.reference_change_rate 
+            : parseFloat(item.reference_change_rate);
           
           if (!isNaN(parsedReferenceChange)) {
-            referenceChange = parsedReferenceChange * 100;
-          }
-        }
-        // 如果reference_rate不存在，则尝试使用reference_change字段（API可能使用的映射字段名）
-        else if (matchingItem.reference_change !== null && matchingItem.reference_change !== undefined) {
-          // 尝试直接使用数值，如果是字符串则解析
-          const parsedReferenceChange = typeof matchingItem.reference_change === 'number' 
-            ? matchingItem.reference_change 
-            : parseFloat(matchingItem.reference_change);
-          
-          if (!isNaN(parsedReferenceChange)) {
-            referenceChange = parsedReferenceChange * 100;
+            referenceChange = parsedReferenceChange;
           }
         }
         
@@ -225,6 +179,44 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
         const result = dailyChange - referenceChange;
         return result;
       });
+      
+      // 如果K线数据中没有reference_change_rate，则尝试从indexRealChangeDataArray中获取
+      if (comparativeChangeValues.every(val => val === 0) && indexRealChangeDataArray.length > 0) {
+        comparativeChangeValues = sortedData.map(item => {
+          const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
+          if (!matchingItem) return 0;
+          
+          // 检查daily_change或change_rate是否存在且为有效数值
+          let dailyChange = 0;
+          // 首先尝试使用change_rate字段
+          if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
+            const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
+              ? matchingItem.change_rate 
+              : parseFloat(matchingItem.change_rate);
+            
+            if (!isNaN(parsedDailyChange)) {
+              dailyChange = parsedDailyChange;
+            }
+          } 
+          
+          // 检查reference_change或reference_rate是否存在且为有效数值
+          let referenceChange = 0;
+          // 首先尝试使用reference_rate字段
+          if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
+            const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
+              ? matchingItem.reference_rate 
+              : parseFloat(matchingItem.reference_rate);
+            
+            if (!isNaN(parsedReferenceChange)) {
+              referenceChange = parsedReferenceChange;
+            }
+          }
+          
+          // 对比涨跌 = 当天涨跌幅 - 参考指数当天涨跌幅
+          const result = dailyChange - referenceChange;
+          return result;
+        });
+      }
       
       // 检查计算后的对比涨跌数据是否有效
       const hasInvalidValues = comparativeChangeValues.some(val => isNaN(val));
@@ -323,48 +315,60 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
           }
           
           // 获取当日涨跌幅和参考指数涨跌幅
-          if (indexRealChangeData && indexRealChangeData.data) {
+          // 首先尝试从K线数据中直接获取
+          const currentItem = sortedData[index];
+          
+          // 获取当日涨跌幅(change_rate)
+          if (currentItem.change_rate !== null && currentItem.change_rate !== undefined) {
+            const parsedDailyChange = typeof currentItem.change_rate === 'number' 
+              ? currentItem.change_rate 
+              : parseFloat(currentItem.change_rate);
+            
+            if (!isNaN(parsedDailyChange)) {
+              dailyChange = parsedDailyChange.toFixed(2) + '%';
+            }
+          }
+          
+          // 获取参考指数涨跌幅(reference_change_rate)
+          if (currentItem.reference_change_rate !== null && currentItem.reference_change_rate !== undefined) {
+            const parsedReferenceChange = typeof currentItem.reference_change_rate === 'number' 
+              ? currentItem.reference_change_rate 
+              : parseFloat(currentItem.reference_change_rate);
+            
+            if (!isNaN(parsedReferenceChange)) {
+              referenceChange = parsedReferenceChange.toFixed(2) + '%';
+            }
+          }
+          
+          // 如果K线数据中没有这些字段，则尝试从indexRealChangeData中获取
+          if ((dailyChange === '暂无数据' || referenceChange === '暂无数据') && indexRealChangeData && indexRealChangeData.data) {
             const matchingItem = indexRealChangeData.data.find(item => item.date === sortedData[index].date);
             if (matchingItem) {
-              // 安全解析daily_change或change_rate
-              if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
-                // 尝试直接使用数值，如果是字符串则解析
-                const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
-                  ? matchingItem.change_rate 
-                  : parseFloat(matchingItem.change_rate);
-                
-                if (!isNaN(parsedDailyChange)) {
-                  dailyChange = (parsedDailyChange * 100).toFixed(2) + '%';
-                }
-              } else if (matchingItem.daily_change !== null && matchingItem.daily_change !== undefined) {
-                // 尝试直接使用数值，如果是字符串则解析
-                const parsedDailyChange = typeof matchingItem.daily_change === 'number' 
-                  ? matchingItem.daily_change 
-                  : parseFloat(matchingItem.daily_change);
-                
-                if (!isNaN(parsedDailyChange)) {
-                  dailyChange = (parsedDailyChange * 100).toFixed(2) + '%';
+              // 如果当日涨跌幅还没有值，则尝试从matchingItem中获取
+              if (dailyChange === '暂无数据') {
+                // 安全解析change_rate
+                if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
+                  const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
+                    ? matchingItem.change_rate 
+                    : parseFloat(matchingItem.change_rate);
+                  
+                  if (!isNaN(parsedDailyChange)) {
+                    dailyChange = parsedDailyChange.toFixed(2) + '%';
+                  }
                 }
               }
               
-              // 安全解析reference_change或reference_rate
-              if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
-                // 尝试直接使用数值，如果是字符串则解析
-                const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
-                  ? matchingItem.reference_rate 
-                  : parseFloat(matchingItem.reference_rate);
-                
-                if (!isNaN(parsedReferenceChange)) {
-                  referenceChange = (parsedReferenceChange * 100).toFixed(2) + '%';
-                }
-              } else if (matchingItem.reference_change !== null && matchingItem.reference_change !== undefined) {
-                // 尝试直接使用数值，如果是字符串则解析
-                const parsedReferenceChange = typeof matchingItem.reference_change === 'number' 
-                  ? matchingItem.reference_change 
-                  : parseFloat(matchingItem.reference_change);
-                
-                if (!isNaN(parsedReferenceChange)) {
-                  referenceChange = (parsedReferenceChange * 100).toFixed(2) + '%';
+              // 如果参考指数涨跌幅还没有值，则尝试从matchingItem中获取
+              if (referenceChange === '暂无数据') {
+                // 安全解析reference_rate
+                if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
+                  const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
+                    ? matchingItem.reference_rate 
+                    : parseFloat(matchingItem.reference_rate);
+                  
+                  if (!isNaN(parsedReferenceChange)) {
+                    referenceChange = parsedReferenceChange.toFixed(2) + '%';
+                  }
                 }
               }
             }

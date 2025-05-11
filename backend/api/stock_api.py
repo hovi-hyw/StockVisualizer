@@ -279,6 +279,8 @@ async def get_stock_real_change(
     Returns:
         Dict[str, Any]: 包含真实涨跌数据和对比涨跌数据的字典
     """
+    # 注意：此端点与指数和ETF的change-rate端点不同，它提供了更复杂的逻辑，包括获取真实涨跌数据和对比涨跌数据，
+    # 并且需要查询多个表和处理不同年份的指数代码，因此保留此端点
     try:
         # 解析日期
         start = parse_date(start_date) if start_date else None
