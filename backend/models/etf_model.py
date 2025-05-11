@@ -93,6 +93,10 @@ class ETFData(BaseModel):
         change_rate (Optional[float]): 涨跌幅
         change_amount (Optional[float]): 涨跌额
         turnover_rate (Optional[float]): 换手率
+        reference_index (Optional[str]): 参考指数代码
+        reference_name (Optional[str]): 参考指数名称
+        reference_change_rate (Optional[float]): 参考指数涨跌幅
+        relative_change_rate (Optional[float]): 相对涨跌幅（ETF涨跌幅减去参考指数涨跌幅）
     """
     symbol: str
     date: date
@@ -106,6 +110,10 @@ class ETFData(BaseModel):
     change_rate: Optional[float] = None
     change_amount: Optional[float] = None
     turnover_rate: Optional[float] = None
+    reference_index: Optional[str] = None
+    reference_name: Optional[str] = None
+    reference_change_rate: Optional[float] = None
+    relative_change_rate: Optional[float] = None
 
     class Config:
         """Pydantic配置类"""
@@ -181,7 +189,11 @@ class ETFKlineData(BaseModel):
         symbol (str): ETF代码
         name (str): ETF名称
         data (List[ETFData]): K线数据列表
+        reference_index (Optional[str]): 参考指数代码
+        reference_name (Optional[str]): 参考指数名称
     """
     symbol: str
     name: str
     data: List[ETFData]
+    reference_index: Optional[str] = None
+    reference_name: Optional[str] = None

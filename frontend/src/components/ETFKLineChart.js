@@ -103,33 +103,20 @@ const ETFKLineChart = ({ data, title = 'ETF K线图', theme = 'light', symbol })
     let referenceNames = [];
     let referenceIndices = [];
     
-    // 根据ETF代码确定参考指数
+    // 设置默认参考指数（仅在后端数据缺失时使用）
     let defaultReferenceName = '无参考';
     let defaultReferenceIndex = '';
     
-    // ETF参考指数选择逻辑
-    if (symbol && symbol.startsWith('159')) {
-      // 159开头的ETF参考深证综指
-      defaultReferenceName = '深证综指';
-      defaultReferenceIndex = '399001';
-    } else if (symbol && (symbol.startsWith('510') || symbol.startsWith('511') || symbol.startsWith('512'))) {
-      // 510/511/512开头的ETF参考上证综指
-      defaultReferenceName = '上证综指';
-      defaultReferenceIndex = '000001';
-    } else {
-      // 其他ETF参考沪深300
-      defaultReferenceName = '沪深300';
-      defaultReferenceIndex = '000300';
-    }
+    // 注意：我们期望后端提供参考指数信息，这里只是作为后备方案
     
     // 处理对比涨跌数据
     if (indexRealChangeData && indexRealChangeData.data) {
       // 处理ETF的对比涨跌数据
       const indexRealChangeDataArray = indexRealChangeData.data;
       
-      // 对于ETF，直接计算对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
+      // 直接从K线数据中获取对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
       comparativeChangeValues = sortedData.map(item => {
-        // 直接从K线数据中获取change_rate和reference_change_rate
+        // 获取当日涨跌幅和参考指数涨跌幅
         let dailyChange = 0;
         let referenceChange = 0;
         
@@ -160,43 +147,9 @@ const ETFKLineChart = ({ data, title = 'ETF K线图', theme = 'light', symbol })
         return result;
       });
       
-      // 检查是否所有对比涨跌值都为0，这可能表示参考指数数据未被正确处理
+      // 检查对比涨跌数据是否有效
       if (comparativeChangeValues.every(val => val === 0 || val === null || isNaN(val)) && indexRealChangeDataArray.length > 0) {
-        console.log('检测到所有对比涨跌值为0或无效，尝试从原始数据中重新计算');
-        comparativeChangeValues = sortedData.map(item => {
-          const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
-          if (!matchingItem) return 0;
-          
-          // 检查daily_change或change_rate是否存在且为有效数值
-          let dailyChange = 0;
-          // 首先尝试使用change_rate字段
-          if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
-            const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
-              ? matchingItem.change_rate 
-              : parseFloat(matchingItem.change_rate);
-            
-            if (!isNaN(parsedDailyChange)) {
-              dailyChange = parsedDailyChange;
-            }
-          } 
-          
-          // 检查reference_change或reference_rate是否存在且为有效数值
-          let referenceChange = 0;
-          // 首先尝试使用reference_rate字段
-          if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
-            const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
-              ? matchingItem.reference_rate 
-              : parseFloat(matchingItem.reference_rate);
-            
-            if (!isNaN(parsedReferenceChange)) {
-              referenceChange = parsedReferenceChange;
-            }
-          }
-          
-          // 对比涨跌 = 当天涨跌幅 - 参考指数当天涨跌幅
-          const result = dailyChange - referenceChange;
-          return result;
-        });
+        console.warn('对比涨跌数据无效，可能是后端未提供reference_change_rate字段');
       }
       
       // 检查计算后的对比涨跌数据是否有效
@@ -205,37 +158,21 @@ const ETFKLineChart = ({ data, title = 'ETF K线图', theme = 'light', symbol })
         console.error('对比涨跌数据包含无效值(NaN)，请检查数据源');
       }
       
-      // 使用默认参考指数名称和代码，确保与后端逻辑一致
-      referenceNames = sortedData.map(() => defaultReferenceName);
-      referenceIndices = sortedData.map(() => defaultReferenceIndex);
-      
-      // 检查后端是否返回了参考指数信息
-      let hasReferenceInfo = false;
-      
-      // 首先检查第一条数据是否包含参考指数信息
+      // 直接从K线数据中获取参考指数信息
       if (sortedData.length > 0) {
-        const firstItem = sortedData[0];
-        hasReferenceInfo = !!(firstItem.reference_name || firstItem.reference_index);
+        // 检查K线数据中是否包含参考指数信息
+        const hasReferenceInfo = sortedData.some(item => item.reference_name || item.reference_index);
         
-        // 如果K线数据中直接包含参考指数信息，则使用K线数据中的信息
         if (hasReferenceInfo) {
           console.log('从K线数据中获取到参考指数信息');
           referenceNames = sortedData.map(item => item.reference_name || defaultReferenceName);
           referenceIndices = sortedData.map(item => item.reference_index || defaultReferenceIndex);
+        } else {
+          console.warn('K线数据中缺少参考指数信息');
+          // 使用默认值
+          referenceNames = sortedData.map(() => defaultReferenceName);
+          referenceIndices = sortedData.map(() => defaultReferenceIndex);
         }
-      }
-      
-      // 如果K线数据中没有参考指数信息，但indexRealChangeDataArray中有，则使用indexRealChangeDataArray中的信息
-      if (!hasReferenceInfo && indexRealChangeDataArray.length > 0 && indexRealChangeDataArray[0].reference_name) {
-        referenceNames = sortedData.map(item => {
-          const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
-          return matchingItem ? matchingItem.reference_name || defaultReferenceName : defaultReferenceName;
-        });
-        
-        referenceIndices = sortedData.map(item => {
-          const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
-          return matchingItem ? matchingItem.reference_index || defaultReferenceIndex : defaultReferenceIndex;
-        });
       }
       
       console.log('对比涨跌数据已加载:', comparativeChangeValues.length, '条');
