@@ -1,27 +1,24 @@
-// frontend/src/components/IndexETFKLineChart.js
+// frontend/src/components/ETFKLineChart.js
 /**
- * 此组件用于展示指数和ETF的K线图。
- * 使用ECharts绘制指数或ETF的K线图，包含K线、量能和对比涨跌三个子图表。
+ * 此组件用于展示ETF的K线图。
+ * 使用ECharts绘制ETF的K线图，包含K线、量能和对比涨跌三个子图表。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
- * 更新: 2025-03-15 - 添加对比涨跌图表，调整图表高度为原来的80%
  */
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import { formatDate, formatLargeNumber } from '../utils/formatters';
-import { getIndexChangeRate } from '../services/indexService';
 
 /**
- * 指数和ETF K线图组件
+ * ETF K线图组件
  * @param {Object} props - 组件属性
  * @param {Array} props.data - K线数据
  * @param {string} props.title - 图表标题
  * @param {string} props.theme - 图表主题，'light'或'dark'
- * @param {string} props.symbol - 证券代码，用于获取对比涨跌数据
- * @param {string} props.type - 证券类型，'index'或'etf'
+ * @param {string} props.symbol - ETF代码，用于获取对比涨跌数据
  */
-const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', symbol, type = 'index' }) => {
+const ETFKLineChart = ({ data, title = 'ETF K线图', theme = 'light', symbol }) => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const [indexRealChangeData, setIndexRealChangeData] = useState(null);
@@ -78,12 +75,12 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
     try {
       // 直接使用K线数据，不再单独请求对比涨跌数据
       // 后端已经在K线数据中包含了所有需要的信息
-      console.log(`使用K线数据计算${type === 'index' ? '指数' : 'ETF'}对比涨跌数据`);
+      console.log('使用K线数据计算ETF对比涨跌数据');
       setIndexRealChangeData(data);
     } catch (error) {
-      console.error(`处理${type}对比涨跌数据失败:`, error);
+      console.error('处理ETF对比涨跌数据失败:', error);
     }
-  }, [data, symbol, type]);
+  }, [data, symbol]);
 
   useEffect(() => {
     if (!chartInstance.current || !data || !data.data || data.data.length === 0) return;
@@ -106,48 +103,31 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
     let referenceNames = [];
     let referenceIndices = [];
     
-    // 根据证券类型确定参考指数
+    // 根据ETF代码确定参考指数
     let defaultReferenceName = '无参考';
     let defaultReferenceIndex = '';
     
-    if (type === 'etf') {
-      // ETF参考指数选择逻辑
-      if (symbol && symbol.startsWith('159')) {
-        // 159开头的ETF参考深证综指
-        defaultReferenceName = '深证综指';
-        defaultReferenceIndex = '399001';
-      } else if (symbol && (symbol.startsWith('510') || symbol.startsWith('511') || symbol.startsWith('512'))) {
-        // 510/511/512开头的ETF参考上证综指
-        defaultReferenceName = '上证综指';
-        defaultReferenceIndex = '000001';
-      } else {
-        // 其他ETF参考沪深300
-        defaultReferenceName = '沪深300';
-        defaultReferenceIndex = '000300';
-      }
-    } else if (type === 'index') {
-      // 指数参考指数选择逻辑
-      if (symbol && symbol.startsWith('000')) {
-        // 000开头的指数参考上证综指
-        defaultReferenceName = '上证综指';
-        defaultReferenceIndex = '000001';
-      } else if (symbol && symbol.startsWith('399')) {
-        // 399开头的指数参考深证综指
-        defaultReferenceName = '深证综指';
-        defaultReferenceIndex = '399001';
-      } else {
-        // 其他指数参考沪深300
-        defaultReferenceName = '沪深300';
-        defaultReferenceIndex = '000300';
-      }
+    // ETF参考指数选择逻辑
+    if (symbol && symbol.startsWith('159')) {
+      // 159开头的ETF参考深证综指
+      defaultReferenceName = '深证综指';
+      defaultReferenceIndex = '399001';
+    } else if (symbol && (symbol.startsWith('510') || symbol.startsWith('511') || symbol.startsWith('512'))) {
+      // 510/511/512开头的ETF参考上证综指
+      defaultReferenceName = '上证综指';
+      defaultReferenceIndex = '000001';
+    } else {
+      // 其他ETF参考沪深300
+      defaultReferenceName = '沪深300';
+      defaultReferenceIndex = '000300';
     }
     
     // 处理对比涨跌数据
     if (indexRealChangeData && indexRealChangeData.data) {
-      // 处理指数或ETF的对比涨跌数据
+      // 处理ETF的对比涨跌数据
       const indexRealChangeDataArray = indexRealChangeData.data;
       
-      // 对于指数和ETF，直接计算对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
+      // 对于ETF，直接计算对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
       comparativeChangeValues = sortedData.map(item => {
         // 直接从K线数据中获取change_rate和reference_change_rate
         let dailyChange = 0;
@@ -180,8 +160,9 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
         return result;
       });
       
-      // 如果K线数据中没有reference_change_rate，则尝试从indexRealChangeDataArray中获取
-      if (comparativeChangeValues.every(val => val === 0) && indexRealChangeDataArray.length > 0) {
+      // 检查是否所有对比涨跌值都为0，这可能表示参考指数数据未被正确处理
+      if (comparativeChangeValues.every(val => val === 0 || val === null || isNaN(val)) && indexRealChangeDataArray.length > 0) {
+        console.log('检测到所有对比涨跌值为0或无效，尝试从原始数据中重新计算');
         comparativeChangeValues = sortedData.map(item => {
           const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
           if (!matchingItem) return 0;
@@ -228,8 +209,24 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
       referenceNames = sortedData.map(() => defaultReferenceName);
       referenceIndices = sortedData.map(() => defaultReferenceIndex);
       
-      // 如果后端返回了参考指数信息，则使用后端返回的数据
-      if (indexRealChangeDataArray.length > 0 && indexRealChangeDataArray[0].reference_name) {
+      // 检查后端是否返回了参考指数信息
+      let hasReferenceInfo = false;
+      
+      // 首先检查第一条数据是否包含参考指数信息
+      if (sortedData.length > 0) {
+        const firstItem = sortedData[0];
+        hasReferenceInfo = !!(firstItem.reference_name || firstItem.reference_index);
+        
+        // 如果K线数据中直接包含参考指数信息，则使用K线数据中的信息
+        if (hasReferenceInfo) {
+          console.log('从K线数据中获取到参考指数信息');
+          referenceNames = sortedData.map(item => item.reference_name || defaultReferenceName);
+          referenceIndices = sortedData.map(item => item.reference_index || defaultReferenceIndex);
+        }
+      }
+      
+      // 如果K线数据中没有参考指数信息，但indexRealChangeDataArray中有，则使用indexRealChangeDataArray中的信息
+      if (!hasReferenceInfo && indexRealChangeDataArray.length > 0 && indexRealChangeDataArray[0].reference_name) {
         referenceNames = sortedData.map(item => {
           const matchingItem = indexRealChangeDataArray.find(rcItem => rcItem.date === item.date);
           return matchingItem ? matchingItem.reference_name || defaultReferenceName : defaultReferenceName;
@@ -514,76 +511,40 @@ const IndexETFKLineChart = ({ data, title = '指数K线图', theme = 'light', sy
           itemStyle: {
             color: function(params) {
               const index = params.dataIndex;
-              const close = klineData[index].close;
-              const open = klineData[index].open;
+              const close = sortedData[index].close;
+              const open = sortedData[index].open;
               return close > open ? '#c23531' : '#314656';
             }
           }
         },
         {
           name: '对比涨跌',
-          type: 'bar',
+          type: 'line',
           xAxisIndex: 2,
           yAxisIndex: 2,
-          data: comparativeChangeValues.map(val => isNaN(val) ? 0 : val), // 确保没有NaN值
-          label: {
-            show: false
+          data: comparativeChangeValues,
+          symbol: 'none',
+          lineStyle: {
+            width: 1
           },
           itemStyle: {
             color: function(params) {
-              // 确保值存在且不是NaN
-              if (params.value === undefined || isNaN(params.value)) return '#999';
-              return params.value >= 0 ? '#c23531' : '#3fbf67';
+              return params.data >= 0 ? '#c23531' : '#314656';
             }
           },
-          markLine: {
-            symbol: 'none',
-            data: [
-              {
-                yAxis: 0,
-                lineStyle: {
-                  color: '#999',
-                  type: 'dashed'
-                },
-                label: {
-                  show: true,
-                  position: 'end',
-                  formatter: '0%'
-                }
-              }
-            ]
+          areaStyle: {
+            color: function(params) {
+              return params.data >= 0 ? 'rgba(194, 53, 49, 0.3)' : 'rgba(47, 69, 84, 0.3)';
+            }
           }
         }
       ]
     };
 
-    // 设置图表选项
     chartInstance.current.setOption(option);
-    
-    // 添加dataZoom事件监听，触发自定义事件通知其他图表
-    chartInstance.current.on('dataZoom', function(params) {
-      // 创建自定义事件，传递dataZoom信息
-      const event = new CustomEvent('echarts:dataZoom', {
-        detail: params
-      });
-      // 触发事件，通知其他图表
-      window.dispatchEvent(event);
-    });
-  }, [data, indexRealChangeData, theme, title, type]);
+  }, [data, indexRealChangeData]);
 
-  return (
-    <div>
-      <div 
-        ref={chartRef} 
-        style={{ 
-          width: '100%', 
-          height: '72vh',  // 调整为原来的80%（原来90vh*80%=72vh）
-          margin: '0 0 20px 0' // 添加一些下边距
-        }}
-        className="kline-chart-container"
-      />
-    </div>
-  );
+  return <div ref={chartRef} style={{ width: '100%', height: '600px' }} />;
 };
 
-export default IndexETFKLineChart;
+export default ETFKLineChart;

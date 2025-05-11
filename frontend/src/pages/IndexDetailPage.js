@@ -24,19 +24,14 @@ const IndexDetailPage = () => {
                 setIndexInfo(indexInfoResponse);
 
                 // 获取K线数据
-                const klineDataResponse = await getIndexKline(symbol, {
-                    start_date: '2024-01-01', // 可以根据需要调整
-                    end_date: '2025-03-12', // 可以根据需要调整
-                });
+                // 不设置日期范围，获取全部数据
+                const klineDataResponse = await getIndexKline(symbol);
                 setKlineData(klineDataResponse);
                 
                 // 获取指数对比涨跌数据
                 try {
-                    // 使用相同的日期范围获取对比涨跌数据
-                    await getIndexChangeRate(symbol, {
-                        start_date: '2024-01-01',
-                        end_date: '2025-03-12',
-                    });
+                    // 不设置日期范围，获取全部对比涨跌数据
+                    await getIndexChangeRate(symbol);
                     console.log('指数对比涨跌数据已请求');
                 } catch (compareErr) {
                     console.warn('获取指数对比涨跌数据失败，但不影响K线图显示:', compareErr);

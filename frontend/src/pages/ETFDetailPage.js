@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getETFInfo, getETFKline, getETFComparativeChange } from '../services/etfService'; // 引入 etfService
-import IndexETFKLineChart from '../components/IndexETFKLineChart';
+import ETFKLineChart from '../components/ETFKLineChart';
 import { Typography, Alert, Spin } from 'antd';
 
 const { Title } = Typography;
@@ -30,23 +30,18 @@ const ETFDetailPage = () => {
                 const etfInfoResponse = await getETFInfo(symbol);
                 setETFInfo(etfInfoResponse);
 
-                // 获取K线数据
-                const klineDataResponse = await getETFKline(symbol, {
-                    start_date: '2024-01-01', // 可以根据需要调整
-                    end_date: '2025-03-12', // 可以根据需要调整
-                });
+                // 获取K线数据（K线数据中已包含对比涨跌所需的参考指数数据）
+                // 不设置日期范围，获取全部数据
+                const klineDataResponse = await getETFKline(symbol);
                 setKlineData(klineDataResponse);
+                console.log('ETF K线数据已请求，包含对比涨跌所需的参考指数数据');
                 
-                // 获取对比涨跌数据
-                try {
-                    // 使用相同的日期范围获取对比涨跌数据
-                    await getETFComparativeChange(symbol, {
-                        start_date: '2024-01-01',
-                        end_date: '2025-03-12',
-                    });
-                    console.log('ETF对比涨跌数据已请求');
-                } catch (compareErr) {
-                    console.warn('获取ETF对比涨跌数据失败，但不影响K线图显示:', compareErr);
+                // 检查K线数据中是否包含参考指数数据
+                if (klineDataResponse && klineDataResponse.data && klineDataResponse.data.length > 0) {
+                    const firstItem = klineDataResponse.data[0];
+                    if (!firstItem.reference_change_rate && !firstItem.reference_rate) {
+                        console.warn('K线数据中缺少参考指数数据，请检查后端API实现');
+                    }
                 }
             } catch (err) {
                 setError(err.message || '获取数据失败');
@@ -66,7 +61,7 @@ const ETFDetailPage = () => {
             {etfInfo && (
                 <>
                     <Title level={2}>{etfInfo.name} ({etfInfo.symbol})</Title>
-                    {klineData && <IndexETFKLineChart data={klineData} title={`${etfInfo.name} K线图`} symbol={symbol} type="etf" />}
+                    {klineData && <ETFKLineChart data={klineData} title={`${etfInfo.name} K线图`} symbol={symbol} />}
                 </>
             )}
         </div>

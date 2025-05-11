@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
 import StockKLineChart from '../components/StockKLineChart';
-import IndexETFKLineChart from '../components/IndexETFKLineChart';
+import IndexKLineChart from '../components/IndexKLineChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 
@@ -88,11 +88,10 @@ const DetailPage = () => {
           symbol={symbol}
         />
       ) : (
-        <IndexETFKLineChart 
+        <IndexKLineChart 
           data={klineData} 
           title={`${info?.name} (${symbol}) K线图`} 
           symbol={symbol}
-          type={type}
         />
       )}
 

@@ -96,6 +96,9 @@ async def get_etf_kline(
         start = parse_date(start_date) if start_date else None
         end = parse_date(end_date) if end_date else None
         
+        # 如果没有提供日期范围，设置默认值为全部数据
+        # 这样可以确保前端能够获取到完整的数据范围
+        
         # 获取K线数据
         kline_data = etf_service.get_etf_kline(db, symbol, start, end)
         return kline_data
@@ -103,8 +106,3 @@ async def get_etf_kline(
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# 注意：此端点已被移除，因为/etfs/{symbol}/kline接口已经包含了所有需要的数据，包括change_rate和reference_change_rate
-# 前端应直接使用kline接口返回的数据计算对比涨跌（change_rate减去reference_change_rate）
-# 此注释仅作为开发参考，可在确认前端不再使用此接口后删除

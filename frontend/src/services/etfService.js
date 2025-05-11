@@ -66,15 +66,35 @@ export const getETFKline = async (symbol, params = {}) => {
  * @param {string} params.start_date - 开始日期 (YYYY-MM-DD)
  * @param {string} params.end_date - 结束日期 (YYYY-MM-DD)
  * @returns {Promise<Object>} ETF对比涨跌数据
+ * @deprecated 此方法已废弃，请直接使用getETFKline方法获取K线数据，其中已包含对比涨跌所需的参考指数数据
  */
 export const getETFComparativeChange = async (symbol, params = {}) => {
+  console.warn('getETFComparativeChange方法已废弃，请直接使用getETFKline方法获取K线数据');
   try {
     // 直接使用K线数据接口，后端已经在K线数据中包含了所有需要的信息
-    // 前端可以通过计算change_rate减去reference_change_rate来获取对比涨跌值
+    // 后端API应确保K线数据中包含以下字段：
+    // - change_rate 或 daily_change: ETF当日涨跌幅
+    // - reference_rate 或 reference_change: 参考指数当日涨跌幅
+    // - reference_name: 参考指数名称
+    // - reference_index: 参考指数代码
     const response = await api.get(`/etfs/${symbol}/kline`, { params });
     return response;
   } catch (error) {
     console.error(`获取ETF${symbol}对比涨跌数据失败:`, error);
     throw error;
   }
+};
+
+/**
+ * 检查ETF K线数据中是否包含参考指数数据
+ * @param {Object} klineData - K线数据
+ * @returns {boolean} 是否包含参考指数数据
+ */
+export const hasReferenceData = (klineData) => {
+  if (!klineData || !klineData.data || klineData.data.length === 0) {
+    return false;
+  }
+  
+  const firstItem = klineData.data[0];
+  return !!(firstItem.reference_change_rate || firstItem.reference_index);
 };
