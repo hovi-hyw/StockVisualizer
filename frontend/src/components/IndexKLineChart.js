@@ -519,22 +519,14 @@ const IndexKLineChart = ({ data, title = '指数K线图', theme = 'light', symbo
         },
         {
           name: '对比涨跌',
-          type: 'line',
+          type: 'bar',
           xAxisIndex: 2,
           yAxisIndex: 2,
           data: comparativeChangeValues,
-          symbol: 'none',
-          lineStyle: {
-            width: 1
-          },
+          barWidth: '60%',
           itemStyle: {
             color: function(params) {
               return params.data >= 0 ? '#c23531' : '#314656';
-            }
-          },
-          areaStyle: {
-            color: function(params) {
-              return params.data >= 0 ? 'rgba(194, 53, 49, 0.3)' : 'rgba(47, 69, 84, 0.3)';
             }
           }
         }
