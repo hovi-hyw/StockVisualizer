@@ -4,6 +4,7 @@
  * 封装了获取ETF列表、ETF详情和K线数据的方法。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-25
+ * 更新: 2025-04-01 - 添加获取高成交额高振幅ETF列表方法
  */
 
 import api from './api';
@@ -97,4 +98,22 @@ export const hasReferenceData = (klineData) => {
   
   const firstItem = klineData.data[0];
   return !!(firstItem.reference_change_rate || firstItem.reference_index);
+};
+
+/**
+ * 获取高成交额高振幅ETF列表
+ * 筛选条件：平均成交额 > 5亿，平均振幅 > 0.5%
+ * @param {Object} params - 请求参数
+ * @param {number} params.page - 页码，默认为1
+ * @param {number} params.page_size - 每页数量，默认为20
+ * @returns {Promise<Object>} 高成交额高振幅ETF列表数据
+ */
+export const getHighVolumeETFList = async (params = {}) => {
+  try {
+    const response = await api.get('/etfs/high_volume', { params });
+    return response;
+  } catch (error) {
+    console.error('获取高成交额高振幅ETF列表失败:', error);
+    throw error;
+  }
 };

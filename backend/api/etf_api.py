@@ -4,6 +4,7 @@
 提供获取ETF列表、ETF详情和K线数据的API接口。
 Authors: hovi.hyw & AI
 Date: 2025-03-25
+更新: 2025-04-01 - 添加高成交额高振幅ETF列表API端点
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -41,6 +42,35 @@ async def get_etf_list(
     """
     try:
         result = etf_service.get_etf_list(db, page, page_size, search)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/high_volume", response_model=Dict[str, Any])
+async def get_high_volume_etf_list(
+        page: int = Query(1, description="页码，默认为1"),
+        page_size: int = Query(20, description="每页数量，默认为20"),
+        search: Optional[str] = Query(None, description="搜索关键词"),
+        db: Session = Depends(get_db)
+):
+    """
+    获取高成交额高振幅ETF列表。
+    筛选条件：平均成交额 > 5亿，平均振幅 > 0.5%
+
+    Args:
+        page: 页码，默认为1
+        page_size: 每页数量，默认为20
+        search: 搜索关键词，默认为None
+        db: 数据库会话
+
+    Returns:
+        Dict[str, Any]: 包含高成交额高振幅ETF列表、总数和分页信息的字典
+    """
+    try:
+        # 使用SQL查询获取高成交额高振幅ETF列表
+        # SQL查询在ETFService中实现
+        result = etf_service.get_high_volume_etf_list(db, page, page_size, search)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
