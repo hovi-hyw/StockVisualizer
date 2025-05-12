@@ -141,24 +141,24 @@ const IndexList = () => {
       dataIndex: 'name',
       key: 'name',
     },
+    // 修改 columns 定义中的字段名
     {
       title: '最新价',
-      dataIndex: 'latest_price',
-      key: 'latest_price',
+      dataIndex: 'current_price',  // 从 latest_price 改为 current_price
+      key: 'current_price',
       render: (text) => (text ? text.toFixed(2) : '-'),
-      sorter: (a, b) => a.latest_price - b.latest_price,
+      sorter: (a, b) => a.current_price - b.current_price,
     },
     {
       title: '涨跌幅',
-      dataIndex: 'change_percent',
-      key: 'change_percent',
+      dataIndex: 'change_rate',  // 从 change_percent 改为 change_rate
+      key: 'change_rate',
       render: (text) => {
         if (!text && text !== 0) return '-';
         const color = text > 0 ? 'red' : text < 0 ? 'green' : '';
-        // 直接使用后端传来的涨跌幅，不再乘以100
         return <Tag color={color}>{text > 0 ? '+' : ''}{text.toFixed(2)}%</Tag>;
       },
-      sorter: (a, b) => a.change_percent - b.change_percent,
+      sorter: (a, b) => a.change_rate - b.change_rate,
     },
     {
       title: '成交量',
