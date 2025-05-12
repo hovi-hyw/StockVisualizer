@@ -60,8 +60,8 @@ const ETFListPage = () => {
             if (response) {
                 setETFList(response.items || []);
                 setPagination({
-                    ...pagination,
                     current: page,
+                    pageSize: pageSize,
                     total: response.total || 0
                 });
             }
@@ -86,8 +86,8 @@ const ETFListPage = () => {
             if (response) {
                 setHighVolumeETFList(response.items || []);
                 setHighVolumePagination({
-                    ...highVolumePagination,
                     current: page,
+                    pageSize: pageSize,
                     total: response.total || 0
                 });
             }
@@ -153,8 +153,9 @@ const ETFListPage = () => {
     ];
 
     // 处理标准ETF表格变化（分页、排序等）
-    const handleTableChange = (pagination) => {
-        fetchETFList(pagination.current, pagination.pageSize, searchText);
+    const handleTableChange = (paginationInfo) => {
+        setPagination(paginationInfo);
+        fetchETFList(paginationInfo.current, paginationInfo.pageSize, searchText);
     };
 
     // 处理标准ETF搜索
@@ -163,8 +164,9 @@ const ETFListPage = () => {
     };
     
     // 处理高成交额高振幅ETF表格变化（分页、排序等）
-    const handleHighVolumeTableChange = (pagination) => {
-        fetchHighVolumeETFList(pagination.current, pagination.pageSize, highVolumeSearchText);
+    const handleHighVolumeTableChange = (paginationInfo) => {
+        setHighVolumePagination(paginationInfo);
+        fetchHighVolumeETFList(paginationInfo.current, paginationInfo.pageSize, highVolumeSearchText);
     };
 
     // 处理高成交额高振幅ETF搜索
@@ -248,6 +250,25 @@ const ETFListPage = () => {
                                     key: 'name',
                                 },
                                 {
+                                    title: '最新价',
+                                    dataIndex: 'latest_price',
+                                    key: 'latest_price',
+                                    render: (text) => text ? text.toFixed(2) : '-',
+                                    sorter: (a, b) => a.latest_price - b.latest_price
+                                },
+                                {
+                                    title: '涨跌幅',
+                                    dataIndex: 'change_rate',
+                                    key: 'change_rate',
+                                    render: (text) => {
+                                        if (!text && text !== 0) return '-';
+                                        const value = parseFloat(text);
+                                        const color = value >= 0 ? '#c23531' : '#3fbf67';
+                                        return <span style={{ color }}>{value.toFixed(2)}%</span>;
+                                    },
+                                    sorter: (a, b) => a.change_rate - b.change_rate
+                                },
+                                {
                                     title: '平均成交额(亿)',
                                     dataIndex: 'avg_amount',
                                     key: 'avg_amount',
@@ -263,6 +284,7 @@ const ETFListPage = () => {
                                     sorter: (a, b) => a.avg_amplitude - b.avg_amplitude
                                 }
                             ]}
+
                             dataSource={highVolumeETFList}
                             rowKey="symbol"
                             pagination={highVolumePagination}
