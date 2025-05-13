@@ -11,8 +11,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Typography,  message } from 'antd';
-import { FileTextOutlined, GithubOutlined,} from '@ant-design/icons';
+import { Row, Col, Card, Button, Typography, message, Tabs } from 'antd';
+import { FileTextOutlined, GithubOutlined } from '@ant-design/icons';
 import ContactAuthor from '../components/common/ContactAuthor';
 import { getHotIndustries, getConceptSectors, getIndustryStocks, getConceptStocks } from '../services/marketDataService';
 
@@ -21,6 +21,7 @@ import HeroSection from '../components/home/HeroSection';
 import MarketOverview from '../components/home/MarketOverview';
 import HotIndustries from '../components/home/HotIndustries';
 import ConceptSectors from '../components/home/ConceptSectors';
+import ValueETFList from '../components/home/ValueETFList';
 
 const { Title } = Typography;
 
@@ -307,70 +308,80 @@ const HomePage = () => {
         <Title level={2} className="section-title">市场概览</Title>
         <MarketOverview />
         
-        {/* 市场热点区域 - 热门行业和概念板块 */}
+        {/* 市场热点区域 - 卡片式标签设计 */}
         <div style={{ marginTop: '40px' }}>
           <Title level={2} className="section-title">市场热点</Title>
-          {/* 热门行业部分 */}
-          <HotIndustries 
-            hotIndustries={hotIndustries}
-            industryStocks={industryStocks}
-            selectedIndustry={selectedIndustry}
-            loading={hotspotLoading}
-            error={hotspotError}
-            onIndustryClick={handleIndustryClick}
-            onSortChange={handleIndustrySortChange}
-            sortField={industrySortField}
-            sortOrder={industrySortOrder}
-            onAddToFavorites={(stock) => {
-              const savedFavorites = localStorage.getItem('favoriteStocks');
-              const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-              // 创建包含完整股票代码的对象
-              const stockWithFullCode = {
-                ...stock,
-                symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
-              };
-              if (!favorites.some(item => item.code === stock.code)) {
-                favorites.push(stockWithFullCode);
-                localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
-                // 更新React状态，这样不需要刷新页面就能看到新添加的股票
-                setFavoriteStocks(favorites);
-                message.success(`已将${stock.name}添加到自选股`);
-              } else {
-                message.info(`${stock.name}已在自选股中`);
-              }
-            }}
-          />
-          
-          {/* 概念板块部分 */}
-          <ConceptSectors 
-            hotConcepts={hotConcepts}
-            conceptStocks={conceptStocks}
-            selectedConcept={selectedConcept}
-            loading={hotspotLoading}
-            error={hotspotError}
-            onConceptClick={handleConceptClick}
-            onSortChange={handleConceptSortChange}
-            sortField={conceptSortField}
-            sortOrder={conceptSortOrder}
-            onAddToFavorites={(stock) => {
-              const savedFavorites = localStorage.getItem('favoriteStocks');
-              const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-              // 创建包含完整股票代码的对象
-              const stockWithFullCode = {
-                ...stock,
-                symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
-              };
-              if (!favorites.some(item => item.code === stock.code)) {
-                favorites.push(stockWithFullCode);
-                localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
-                // 更新React状态，这样不需要刷新页面就能看到新添加的股票
-                setFavoriteStocks(favorites);
-                message.success(`已将${stock.name}添加到自选股`);
-              } else {
-                message.info(`${stock.name}已在自选股中`);
-              }
-            }}
-          />
+          <Card bordered={false} className="market-hotspot-card" style={{ marginBottom: '24px' }}>
+            <Tabs defaultActiveKey="industries" size="large" type="card" className="market-tabs" style={{ marginTop: '8px' }}>
+              <Tabs.TabPane tab="热门行业" key="industries">
+                <HotIndustries 
+                  hotIndustries={hotIndustries}
+                  industryStocks={industryStocks}
+                  selectedIndustry={selectedIndustry}
+                  loading={hotspotLoading}
+                  error={hotspotError}
+                  onIndustryClick={handleIndustryClick}
+                  onSortChange={handleIndustrySortChange}
+                  sortField={industrySortField}
+                  sortOrder={industrySortOrder}
+                  onAddToFavorites={(stock) => {
+                    const savedFavorites = localStorage.getItem('favoriteStocks');
+                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                    // 创建包含完整股票代码的对象
+                    const stockWithFullCode = {
+                      ...stock,
+                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+                    };
+                    if (!favorites.some(item => item.code === stock.code)) {
+                      favorites.push(stockWithFullCode);
+                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                      setFavoriteStocks(favorites);
+                      message.success(`已将${stock.name}添加到自选股`);
+                    } else {
+                      message.info(`${stock.name}已在自选股中`);
+                    }
+                  }}
+                />
+              </Tabs.TabPane>
+              
+              <Tabs.TabPane tab="概念板块" key="concepts">
+                <ConceptSectors 
+                  hotConcepts={hotConcepts}
+                  conceptStocks={conceptStocks}
+                  selectedConcept={selectedConcept}
+                  loading={hotspotLoading}
+                  error={hotspotError}
+                  onConceptClick={handleConceptClick}
+                  onSortChange={handleConceptSortChange}
+                  sortField={conceptSortField}
+                  sortOrder={conceptSortOrder}
+                  onAddToFavorites={(stock) => {
+                    const savedFavorites = localStorage.getItem('favoriteStocks');
+                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+                    // 创建包含完整股票代码的对象
+                    const stockWithFullCode = {
+                      ...stock,
+                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+                    };
+                    if (!favorites.some(item => item.code === stock.code)) {
+                      favorites.push(stockWithFullCode);
+                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                      setFavoriteStocks(favorites);
+                      message.success(`已将${stock.name}添加到自选股`);
+                    } else {
+                      message.info(`${stock.name}已在自选股中`);
+                    }
+                  }}
+                />
+              </Tabs.TabPane>
+              
+              <Tabs.TabPane tab="价值ETF" key="etfs">
+                <ValueETFList />
+              </Tabs.TabPane>
+            </Tabs>
+          </Card>
         </div>
       </div>
 
