@@ -11,10 +11,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Typography, Space, Spin, Tag, Tooltip, message } from 'antd';
-import { FileTextOutlined, GithubOutlined, FireOutlined, RiseOutlined, FallOutlined, PlusOutlined, QuestionCircleOutlined, LineChartOutlined, FundOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
-import { formatLargeNumber } from '../utils/formatters';
+import { Row, Col, Card, Button, Typography,  message } from 'antd';
+import { FileTextOutlined, GithubOutlined,} from '@ant-design/icons';
 import ContactAuthor from '../components/common/ContactAuthor';
 import { getHotIndustries, getConceptSectors, getIndustryStocks, getConceptStocks } from '../services/marketDataService';
 
@@ -23,10 +21,8 @@ import HeroSection from '../components/home/HeroSection';
 import MarketOverview from '../components/home/MarketOverview';
 import HotIndustries from '../components/home/HotIndustries';
 import ConceptSectors from '../components/home/ConceptSectors';
-import ValueETFList from '../components/home/ValueETFList';
-import StockFunds from '../components/home/StockFunds';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title } = Typography;
 
 /**
  * 首页组件
@@ -35,7 +31,7 @@ const { Title, Text, Paragraph } = Typography;
 const HomePage = () => {
   
   // 自选股状态
-  const [favoriteStocks, setFavoriteStocks] = useState([]);
+  const [setFavoriteStocks] = useState([]);
   
   // 热门行业和概念板块状态
   const [hotIndustries, setHotIndustries] = useState([]);
@@ -299,24 +295,7 @@ const HomePage = () => {
       setConceptStocks(sortStockData(conceptStocks, field, 'desc'));
     }
   };
-  
-  // 根据涨跌幅返回不同颜色
-  const getChangeColor = (change) => {
-    // 确保change是字符串类型
-    const changeStr = String(change || '0');
-    // 将字符串转换为数字进行比较
-    const value = parseFloat(changeStr.replace('%', '').replace('+', ''));
-    // 保持涨跌颜色一致，不受主题影响
-    return value >= 0 ? '#cf1322' : '#3f8600';
-  };
 
-  // 根据热度返回标签颜色
-  const getHotTagColor = (hot) => {
-    // 保持热度标签颜色一致，不受主题影响
-    if (hot >= 90) return 'volcano';
-    if (hot >= 80) return 'orange';
-    return 'gold';
-  };
   return (
     <div className="home-page">
       {/* 顶部横幅区域 */}
@@ -395,18 +374,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* 价值ETF和热门基金区域 */}
-      <div style={{ marginTop: '40px' }}>
-        <Title level={2} className="section-title">投资工具</Title>
-        <Row gutter={[24, 24]} style={{ marginTop: '20px' }}>
-          <Col xs={24} md={12}>
-            <ValueETFList />
-          </Col>
-          <Col xs={24} md={12}>
-            <StockFunds />
-          </Col>
-        </Row>
-      </div>
+      
 
       {/* 底部链接区域 */}
       <div className="about-section">
