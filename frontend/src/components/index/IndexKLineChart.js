@@ -8,7 +8,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import { formatDate, formatLargeNumber } from '../utils/formatters';
+import { formatDate, formatLargeNumber } from '../../utils/formatters';
 
 /**
  * 指数K线图组件

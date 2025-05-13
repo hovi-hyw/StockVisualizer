@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, message, Button, Space, Alert, Tag } from 'antd';
 import { LineChartOutlined, SearchOutlined } from '@ant-design/icons';
-import { getIndexList } from '../services/indexService';
+import { getIndexList } from '../../services/indexService';
 
 const { Search } = Input;
 

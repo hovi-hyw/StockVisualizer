@@ -6,37 +6,33 @@
  * Date: 2025-03-12
  * 更新: 2025-03-16 - 添加实时市场指数数据
  * 更新: 2025-03-25 - 修改布局，删除部分列，扩大热门行业和概念板块宽度，添加交互功能
+ * 更新: 2025-03-26 - 拆分组件，提高代码可维护性
+ * 更新: 2025-03-27 - 继续拆分组件，添加ValueETFList和StockFunds组件
  */
 
 import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Button, Typography, Space, Spin, Tag, Tooltip, message } from 'antd';
+import { FileTextOutlined, GithubOutlined, FireOutlined, RiseOutlined, FallOutlined, PlusOutlined, QuestionCircleOutlined, LineChartOutlined, FundOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Button, Typography, Space, List, Spin, message, Tag, Tooltip } from 'antd';
-import { LineChartOutlined, FundOutlined, RiseOutlined, FallOutlined, FileTextOutlined, GithubOutlined, PlusOutlined, FireOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import ContactAuthor from '../components/ContactAuthor';
-import { getMarketIndices } from '../services/marketService';
-import { getHotIndustries, getConceptSectors, getIndustryStocks, getConceptStocks } from '../services/marketDataService';
 import { formatLargeNumber } from '../utils/formatters';
+import ContactAuthor from '../components/common/ContactAuthor';
+import { getHotIndustries, getConceptSectors, getIndustryStocks, getConceptStocks } from '../services/marketDataService';
 
-const { Title, Paragraph, Text } = Typography;
+// 导入拆分后的组件
+import HeroSection from '../components/home/HeroSection';
+import MarketOverview from '../components/home/MarketOverview';
+import HotIndustries from '../components/home/HotIndustries';
+import ConceptSectors from '../components/home/ConceptSectors';
+import ValueETFList from '../components/home/ValueETFList';
+import StockFunds from '../components/home/StockFunds';
+
+const { Title, Text, Paragraph } = Typography;
 
 /**
  * 首页组件
  * @returns {JSX.Element} 首页组件
  */
 const HomePage = () => {
-  // 市场指数数据状态
-  const [marketIndices, setMarketIndices] = useState({
-    '000001': { name: '上证指数', current: 0, change_percent: 0 },
-    '399001': { name: '深证成指', current: 0, change_percent: 0 },
-    '399006': { name: '创业板指', current: 0, change_percent: 0 },
-    '000688': { name: '科创50', current: 0, change_percent: 0 },
-    '000300': { name: '沪深300', current: 0, change_percent: 0 },
-    '399005': { name: '中小板指', current: 0, change_percent: 0 },
-    'HSCEI': { name: '恒生互联', current: 0, change_percent: 0 },
-    'HSTECH': { name: '中概互联', current: 0, change_percent: 0 }
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   
   // 自选股状态
   const [favoriteStocks, setFavoriteStocks] = useState([]);
@@ -79,39 +75,7 @@ const HomePage = () => {
     // 交易时间：9:00-16:00
     return currentTime >= 900 && currentTime <= 1600;
   };
-  
-  // 获取市场指数数据
-  useEffect(() => {
-    const fetchMarketIndices = async () => {
-      try {
-        setLoading(true);
-        const data = await getMarketIndices();
-        if (data) {
-          setMarketIndices(data);
-        }
-        setError(null);
-      } catch (err) {
-        console.error('获取市场指数数据失败:', err);
-        setError('获取市场指数数据失败');
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    // 首次加载数据
-    fetchMarketIndices();
-
-    // 设置定时刷新（每60秒刷新一次）
-    const intervalId = setInterval(() => {
-      // 只在交易时间内更新数据
-      if (isTradeTime()) {
-        fetchMarketIndices();
-      }
-    }, 60000);
-
-    // 组件卸载时清除定时器
-    return () => clearInterval(intervalId);
-  }, []);
   
   // 获取热门行业和概念板块数据
   useEffect(() => {
@@ -356,490 +320,92 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* 顶部横幅区域 */}
-      <div className="hero-section">
-        <div className="hero-content">
-          <Title>智能股票数据可视化平台</Title>
-          <Paragraph>专业的市场分析工具，助您把握投资先机</Paragraph>
-          <Space>
-            <Button type="primary" size="large" icon={<LineChartOutlined />}>
-              <Link to="/stocks">浏览股票</Link>
-            </Button>
-            <Button size="large" icon={<FundOutlined />}>
-              <Link to="/indices">查看指数</Link>
-            </Button>
-          </Space>
-        </div>
-      </div>
+      <HeroSection />
 
 
       {/* 市场概览区域 */}
       <div className="market-overview-section">
         <Title level={2} className="section-title">市场概览</Title>
-        {error && <div style={{ color: 'orange', marginBottom: '10px' }}>{error}</div>}
-        <Row gutter={[24, 24]}>
-          {Object.entries(marketIndices).map(([code, data]) => (
-            <Col xs={24} sm={12} md={6} key={code}>
-              <Card>
-                {loading ? (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Spin size="small" />
-                  </div>
-                ) : (
-                  <Statistic 
-                    title={data?.name} 
-                    value={data?.current || 0} 
-                    precision={2}
-                    valueStyle={{ 
-                      color: data?.change_percent >= 0 ? '#cf1322' : '#3f8600' 
-                    }}
-                    prefix={data?.change_percent >= 0 ? <RiseOutlined /> : <FallOutlined />}
-                    suffix={`${data?.change_percent >= 0 ? '+' : ''}${data?.change_percent.toFixed(2)}%`}
-                  />
-                )}
-              </Card>
-            </Col>
-          ))}
-        </Row>
+        <MarketOverview />
         
         {/* 市场热点区域 - 热门行业和概念板块 */}
         <div style={{ marginTop: '40px' }}>
+          <Title level={2} className="section-title">市场热点</Title>
           {/* 热门行业部分 */}
-          <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-            {/* 热门行业列表 */}
-            <Col xs={24} sm={8} md={6}>
-              <Card 
-                title={
-                  <Space>
-                    <Title level={4}><FireOutlined style={{ color: '#ff4d4f' }} /> 热门行业</Title>
-                    <Tooltip 
-                      title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0 }}>基于该行业成交量、换手率和涨跌幅综合计算，数值越高表示关注度越高。</Typography.Paragraph>}
-                      placement="topRight"
-                      overlayStyle={{ maxWidth: '300px' }}
-                    >
-                      <QuestionCircleOutlined className="info-icon" />
-                    </Tooltip>
-                  </Space>
-                }
-                className="hotspot-card"
-                bordered={false}
-                style={{ height: '600px' }} // 设置固定高度
-              >
-                {hotspotLoading ? (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Spin tip="加载市场热点数据中..." />
-                  </div>
-                ) : hotspotError ? (
-                  <div style={{ color: 'orange', marginBottom: '10px' }}>{hotspotError}</div>
-                ) : (
-                  <List
-                    dataSource={hotIndustries}
-                    renderItem={(item) => (
-                      <List.Item 
-                        style={{ 
-                          cursor: 'pointer',
-                          backgroundColor: selectedIndustry && selectedIndustry.name === item.name ? 'rgba(24, 144, 255, 0.1)' : 'transparent',
-                          borderLeft: selectedIndustry && selectedIndustry.name === item.name ? '3px solid #1890ff' : 'none',
-                          paddingLeft: selectedIndustry && selectedIndustry.name === item.name ? '10px' : '13px'
-                        }}
-                        onClick={() => handleIndustryClick(item)}
-                      >
-                        <div className="hotspot-item" style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-                          <Text strong>{item.name}</Text>
-                          <Space>
-                            <Text style={{ color: getChangeColor(item.change) }}>
-                              {item.change.startsWith('+') ? <RiseOutlined /> : <FallOutlined />} {item.change}
-                            </Text>
-                            <Tag color={getHotTagColor(item.hot)}>热度 {item.hot}</Tag>
-                          </Space>
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                )}
-              </Card>
-            </Col>
-
-            {/* 热门行业相关个股 */}
-            <Col xs={24} sm={16} md={18}>
-              <Card 
-                title={
-                  <Space>
-                    <Title level={4}>{selectedIndustry ? `${selectedIndustry.name}相关个股` : '行业相关个股'}</Title>
-                  </Space>
-                }
-                className="hotspot-card"
-                bordered={false}
-                style={{ height: '600px', display: 'flex', flexDirection: 'column' }} // 设置固定高度并允许内部滚动
-              >
-                {hotspotLoading && !selectedIndustry ? ( // 初始加载时显示
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Spin tip="加载中..." />
-                  </div>
-                ) : industryStocks.length > 0 ? (
-                  <div style={{ flexGrow: 1, overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100% - 56px)' }}>
-                    <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <th style={{ padding: '8px 4px', textAlign: 'left' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                              onClick={() => handleIndustrySortChange('name')}
-                            >
-                              <span>股票名称</span>
-                              {industrySortField === 'name' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'left' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                              onClick={() => handleIndustrySortChange('code')}
-                            >
-                              <span>代码</span>
-                              {industrySortField === 'code' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleIndustrySortChange('change_percent')}
-                            >
-                              <span>涨跌幅</span>
-                              {industrySortField === 'change_percent' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleIndustrySortChange('amplitude')}
-                            >
-                              <span>振幅</span>
-                              {industrySortField === 'amplitude' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleIndustrySortChange('amount')}
-                            >
-                              <span>成交额</span>
-                              {industrySortField === 'amount' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleIndustrySortChange('turnover_rate')}
-                            >
-                              <span>换手率</span>
-                              {industrySortField === 'turnover_rate' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {industrySortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {industryStocks.map((stock, index) => (
-                          <tr key={stock.code} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                            <td style={{ padding: '8px 4px' }}>
-                              <Space>
-                                <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
-                                  <Text strong>{stock.name}</Text>
-                                </Link>
-                                <Button 
-                                  type="text" 
-                                  icon={<PlusOutlined />} 
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    const savedFavorites = localStorage.getItem('favoriteStocks');
-                                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-                                    // 创建包含完整股票代码的对象
-                                    const stockWithFullCode = {
-                                      ...stock,
-                                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
-                                    };
-                                    if (!favorites.some(item => item.code === stock.code)) {
-                                      favorites.push(stockWithFullCode);
-                                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
-                                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
-                                      setFavoriteStocks(favorites);
-                                      message.success(`已将${stock.name}添加到自选股`);
-                                    } else {
-                                      message.info(`${stock.name}已在自选股中`);
-                                    }
-                                  }}
-                                />
-                              </Space>
-                            </td>
-                            <td style={{ padding: '8px 4px' }}>
-                              <Text type="secondary">{stock.code}</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text style={{ color: getChangeColor(stock.change_percent) }}>{stock.change_percent}%</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{stock.amplitude}%</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{formatLargeNumber(stock.amount)}</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{stock.turnover_rate}%</Text>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Text type="secondary">{selectedIndustry ? `暂无${selectedIndustry.name}相关个股数据` : '请先选择一个行业'}</Text>
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* 概念板块列表 */}
-            <Col xs={24} sm={8} md={6}>
-              <Card 
-                title={
-                  <Space>
-                    <Title level={4}><RiseOutlined style={{ color: '#52c41a' }} /> 概念板块</Title>
-                    <Tooltip 
-                      title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0 }}>基于该概念板块的讨论度、相关股票表现和资金流入综合计算，数值越高表示关注度越高。</Typography.Paragraph>}
-                      placement="topRight"
-                      overlayStyle={{ maxWidth: '300px' }}
-                    >
-                      <QuestionCircleOutlined className="info-icon" />
-                    </Tooltip>
-                  </Space>
-                }
-                className="hotspot-card"
-                bordered={false}
-                style={{ height: '600px' }} // 设置固定高度
-              >
-                {hotspotLoading ? (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Spin tip="加载市场热点数据中..." />
-                  </div>
-                ) : hotspotError ? (
-                  <div style={{ color: 'orange', marginBottom: '10px' }}>{hotspotError}</div>
-                ) : (
-                  <List
-                    dataSource={hotConcepts}
-                    renderItem={(item) => (
-                      <List.Item 
-                        style={{ 
-                          cursor: 'pointer',
-                          backgroundColor: selectedConcept && selectedConcept.name === item.name ? 'rgba(24, 144, 255, 0.1)' : 'transparent',
-                          borderLeft: selectedConcept && selectedConcept.name === item.name ? '3px solid #1890ff' : 'none',
-                          paddingLeft: selectedConcept && selectedConcept.name === item.name ? '10px' : '13px'
-                        }}
-                        onClick={() => handleConceptClick(item)}
-                      >
-                        <div className="hotspot-item" style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-                          <Text strong>{item.name}</Text>
-                          <Space>
-                            <Text style={{ color: getChangeColor(item.change) }}>
-                              {item.change.startsWith('+') ? <RiseOutlined /> : <FallOutlined />} {item.change}
-                            </Text>
-                            <Tag color={getHotTagColor(item.hot)}>热度 {item.hot}</Tag>
-                          </Space>
-                        </div>
-                      </List.Item>
-                    )}
-                  />
-                )}
-              </Card>
-            </Col>
-
-            {/* 概念板块相关个股 */}
-            <Col xs={24} sm={16} md={18}>
-              <Card 
-                title={
-                  <Space>
-                    <Title level={4}>{selectedConcept ? `${selectedConcept.name}相关个股` : '概念相关个股'}</Title>
-                  </Space>
-                }
-                className="hotspot-card"
-                bordered={false}
-                style={{ height: '600px', display: 'flex', flexDirection: 'column' }} // 设置固定高度并允许内部滚动
-              >
-                {hotspotLoading && !selectedConcept ? ( // 初始加载时显示
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Spin tip="加载中..." />
-                  </div>
-                ) : conceptStocks.length > 0 ? (
-                  <div style={{ flexGrow: 1, overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100% - 56px)' }}>
-                    <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <th style={{ padding: '8px 4px', textAlign: 'left' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                              onClick={() => handleConceptSortChange('name')}
-                            >
-                              <span>股票名称</span>
-                              {conceptSortField === 'name' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'left' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                              onClick={() => handleConceptSortChange('code')}
-                            >
-                              <span>代码</span>
-                              {conceptSortField === 'code' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleConceptSortChange('change_percent')}
-                            >
-                              <span>涨跌幅</span>
-                              {conceptSortField === 'change_percent' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleConceptSortChange('amplitude')}
-                            >
-                              <span>振幅</span>
-                              {conceptSortField === 'amplitude' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleConceptSortChange('amount')}
-                            >
-                              <span>成交额</span>
-                              {conceptSortField === 'amount' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                          <th style={{ padding: '8px 4px', textAlign: 'right' }}>
-                            <div 
-                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}
-                              onClick={() => handleConceptSortChange('turnover_rate')}
-                            >
-                              <span>换手率</span>
-                              {conceptSortField === 'turnover_rate' && (
-                                <span style={{ marginLeft: '4px' }}>
-                                  {conceptSortOrder === 'asc' ? '↑' : '↓'}
-                                </span>
-                              )}
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {conceptStocks.map((stock, index) => (
-                          <tr key={stock.code} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                            <td style={{ padding: '8px 4px' }}>
-                              <Space>
-                                <Link to={`/detail/stock/${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`} style={{ color: 'inherit' }}>
-                                  <Text strong>{stock.name}</Text>
-                                </Link>
-                                <Button 
-                                  type="text" 
-                                  icon={<PlusOutlined />} 
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    const savedFavorites = localStorage.getItem('favoriteStocks');
-                                    const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
-                                    // 创建包含完整股票代码的对象
-                                    const stockWithFullCode = {
-                                      ...stock,
-                                      symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
-                                    };
-                                    if (!favorites.some(item => item.code === stock.code)) {
-                                      favorites.push(stockWithFullCode);
-                                      localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
-                                      // 更新React状态，这样不需要刷新页面就能看到新添加的股票
-                                      setFavoriteStocks(favorites);
-                                      message.success(`已将${stock.name}添加到自选股`);
-                                    } else {
-                                      message.info(`${stock.name}已在自选股中`);
-                                    }
-                                  }}
-                                />
-                              </Space>
-                            </td>
-                            <td style={{ padding: '8px 4px' }}>
-                              <Text type="secondary">{stock.code}</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text style={{ color: getChangeColor(stock.change_percent) }}>{stock.change_percent}%</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{stock.amplitude}%</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{formatLargeNumber(stock.amount)}</Text>
-                            </td>
-                            <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                              <Text type="secondary">{stock.turnover_rate}%</Text>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '20px' }}>
-                    <Text type="secondary">{selectedConcept ? `暂无${selectedConcept.name}相关个股数据` : '请先选择一个概念'}</Text>
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
+          <HotIndustries 
+            hotIndustries={hotIndustries}
+            industryStocks={industryStocks}
+            selectedIndustry={selectedIndustry}
+            loading={hotspotLoading}
+            error={hotspotError}
+            onIndustryClick={handleIndustryClick}
+            onSortChange={handleIndustrySortChange}
+            sortField={industrySortField}
+            sortOrder={industrySortOrder}
+            onAddToFavorites={(stock) => {
+              const savedFavorites = localStorage.getItem('favoriteStocks');
+              const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+              // 创建包含完整股票代码的对象
+              const stockWithFullCode = {
+                ...stock,
+                symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+              };
+              if (!favorites.some(item => item.code === stock.code)) {
+                favorites.push(stockWithFullCode);
+                localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                setFavoriteStocks(favorites);
+                message.success(`已将${stock.name}添加到自选股`);
+              } else {
+                message.info(`${stock.name}已在自选股中`);
+              }
+            }}
+          />
+          
+          {/* 概念板块部分 */}
+          <ConceptSectors 
+            hotConcepts={hotConcepts}
+            conceptStocks={conceptStocks}
+            selectedConcept={selectedConcept}
+            loading={hotspotLoading}
+            error={hotspotError}
+            onConceptClick={handleConceptClick}
+            onSortChange={handleConceptSortChange}
+            sortField={conceptSortField}
+            sortOrder={conceptSortOrder}
+            onAddToFavorites={(stock) => {
+              const savedFavorites = localStorage.getItem('favoriteStocks');
+              const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+              // 创建包含完整股票代码的对象
+              const stockWithFullCode = {
+                ...stock,
+                symbol: `${stock.code.startsWith('6') ? 'sh' : 'sz'}${stock.code}`
+              };
+              if (!favorites.some(item => item.code === stock.code)) {
+                favorites.push(stockWithFullCode);
+                localStorage.setItem('favoriteStocks', JSON.stringify(favorites));
+                // 更新React状态，这样不需要刷新页面就能看到新添加的股票
+                setFavoriteStocks(favorites);
+                message.success(`已将${stock.name}添加到自选股`);
+              } else {
+                message.info(`${stock.name}已在自选股中`);
+              }
+            }}
+          />
         </div>
+      </div>
+
+      {/* 价值ETF和热门基金区域 */}
+      <div style={{ marginTop: '40px' }}>
+        <Title level={2} className="section-title">投资工具</Title>
+        <Row gutter={[24, 24]} style={{ marginTop: '20px' }}>
+          <Col xs={24} md={12}>
+            <ValueETFList />
+          </Col>
+          <Col xs={24} md={12}>
+            <StockFunds />
+          </Col>
+        </Row>
       </div>
 
       {/* 底部链接区域 */}

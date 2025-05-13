@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import { List, Card, Typography, Spin, Alert } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
-import { getDocsList } from '../services/docsService';
+import { getDocsList } from '../../services/docsService';
 
 const { Title } = Typography;
 

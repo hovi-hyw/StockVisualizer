@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Typography } from 'antd';
-import StockList from '../components/StockList';
+import StockList from '../components/stock/StockList';
 
 const { Title } = Typography;
 

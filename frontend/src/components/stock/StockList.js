@@ -11,9 +11,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Table, Input, Space, Tag, Button, message, Alert, Spin, Progress } from 'antd';
 import { SearchOutlined, LineChartOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { getStockList } from '../services/stockService';
-import { formatCurrency, formatPercent } from '../utils/formatters';
-import { getPriceDirection } from '../utils/helpers';
+import { getStockList } from '../../services/stockService';
+import { formatCurrency, formatPercent } from '../../utils/formatters';
+import { getPriceDirection } from '../../utils/helpers';
 
 const { Search } = Input;
 
