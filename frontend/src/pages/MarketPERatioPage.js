@@ -25,7 +25,8 @@ const MarketPERatioPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartType, setChartType] = useState('combined'); // 'combined', 'pe', 'kline'
-  const [selectedMarkets, setSelectedMarkets] = useState(['上证', '深证', '创业板', '科创版']);
+  // 默认显示所有市场，不再提供选择
+  const selectedMarkets = ['上证', '深证', '创业板', '科创版'];
   
   // 获取市盈率和K线数据
   useEffect(() => {
@@ -58,10 +59,7 @@ const MarketPERatioPage = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // 处理市场选择变更
-  const handleMarketChange = (checkedValues) => {
-    setSelectedMarkets(checkedValues);
-  };
+  // 不再需要市场选择变更处理函数
 
   // 处理图表类型变更
   const handleChartTypeChange = (e) => {
@@ -77,14 +75,32 @@ const MarketPERatioPage = () => {
 
     // 准备数据
     const series = [];
-    const xAxisData = [];
+    let xAxisData = [];
     const legends = [];
     
-    // 处理选中的市场
-    selectedMarkets.forEach((market, index) => {
+    // 首先获取所有市场数据的日期并合并去重，确保时间轴对齐
+    selectedMarkets.forEach(market => {
       if (peRatioData[market] && peRatioData[market].length > 0) {
-        // 市盈率数据
-        const peData = peRatioData[market].map(item => item.pe_ratio);
+        const dates = peRatioData[market].map(item => item.date);
+        xAxisData = [...xAxisData, ...dates];
+      }
+    });
+    
+    // 去重并排序日期
+    xAxisData = [...new Set(xAxisData)].sort();
+    
+    // 处理选中的市场
+    selectedMarkets.forEach(market => {
+      if (peRatioData[market] && peRatioData[market].length > 0) {
+        // 创建日期到市盈率的映射
+        const peMap = {};
+        peRatioData[market].forEach(item => {
+          peMap[item.date] = item.pe_ratio;
+        });
+        
+        // 根据统一的时间轴创建数据点
+        const peData = xAxisData.map(date => peMap[date] || null);
+        
         series.push({
           name: `${market}市盈率`,
           type: 'line',
@@ -94,13 +110,22 @@ const MarketPERatioPage = () => {
           symbolSize: 6,
           lineStyle: {
             width: 2
-          }
+          },
+          connectNulls: true
         });
         legends.push(`${market}市盈率`);
         
         // K线收盘价数据
         if (klineData[market] && klineData[market].length > 0) {
-          const closeData = klineData[market].map(item => item.close);
+          // 创建日期到收盘价的映射
+          const closeMap = {};
+          klineData[market].forEach(item => {
+            closeMap[item.date] = item.close;
+          });
+          
+          // 根据统一的时间轴创建数据点
+          const closeData = xAxisData.map(date => closeMap[date] || null);
+          
           series.push({
             name: `${market}指数`,
             type: 'line',
@@ -111,14 +136,10 @@ const MarketPERatioPage = () => {
             lineStyle: {
               width: 2,
               type: 'dashed'
-            }
+            },
+            connectNulls: true
           });
           legends.push(`${market}指数`);
-        }
-        
-        // 只需要添加一次x轴数据
-        if (index === 0) {
-          xAxisData.push(...peRatioData[market].map(item => item.date));
         }
       }
     });
@@ -191,14 +212,32 @@ const MarketPERatioPage = () => {
 
     // 准备数据
     const series = [];
-    const xAxisData = [];
+    let xAxisData = [];
     const legends = [];
     
-    // 处理选中的市场
-    selectedMarkets.forEach((market, index) => {
+    // 首先获取所有市场数据的日期并合并去重，确保时间轴对齐
+    selectedMarkets.forEach(market => {
       if (peRatioData[market] && peRatioData[market].length > 0) {
-        // 市盈率数据
-        const peData = peRatioData[market].map(item => item.pe_ratio);
+        const dates = peRatioData[market].map(item => item.date);
+        xAxisData = [...xAxisData, ...dates];
+      }
+    });
+    
+    // 去重并排序日期
+    xAxisData = [...new Set(xAxisData)].sort();
+    
+    // 处理选中的市场
+    selectedMarkets.forEach(market => {
+      if (peRatioData[market] && peRatioData[market].length > 0) {
+        // 创建日期到市盈率的映射
+        const peMap = {};
+        peRatioData[market].forEach(item => {
+          peMap[item.date] = item.pe_ratio;
+        });
+        
+        // 根据统一的时间轴创建数据点
+        const peData = xAxisData.map(date => peMap[date] || null);
+        
         series.push({
           name: `${market}市盈率`,
           type: 'line',
@@ -207,14 +246,10 @@ const MarketPERatioPage = () => {
           symbolSize: 6,
           lineStyle: {
             width: 2
-          }
+          },
+          connectNulls: true
         });
         legends.push(`${market}市盈率`);
-        
-        // 只需要添加一次x轴数据
-        if (index === 0) {
-          xAxisData.push(...peRatioData[market].map(item => item.date));
-        }
       }
     });
 
@@ -260,14 +295,32 @@ const MarketPERatioPage = () => {
 
     // 准备数据
     const series = [];
-    const xAxisData = [];
+    let xAxisData = [];
     const legends = [];
     
-    // 处理选中的市场
-    selectedMarkets.forEach((market, index) => {
+    // 首先获取所有市场数据的日期并合并去重，确保时间轴对齐
+    selectedMarkets.forEach(market => {
       if (klineData[market] && klineData[market].length > 0) {
-        // K线收盘价数据
-        const closeData = klineData[market].map(item => item.close);
+        const dates = klineData[market].map(item => item.date);
+        xAxisData = [...xAxisData, ...dates];
+      }
+    });
+    
+    // 去重并排序日期
+    xAxisData = [...new Set(xAxisData)].sort();
+    
+    // 处理选中的市场
+    selectedMarkets.forEach(market => {
+      if (klineData[market] && klineData[market].length > 0) {
+        // 创建日期到收盘价的映射
+        const closeMap = {};
+        klineData[market].forEach(item => {
+          closeMap[item.date] = item.close;
+        });
+        
+        // 根据统一的时间轴创建数据点
+        const closeData = xAxisData.map(date => closeMap[date] || null);
+        
         series.push({
           name: `${market}指数`,
           type: 'line',
@@ -276,14 +329,10 @@ const MarketPERatioPage = () => {
           symbolSize: 6,
           lineStyle: {
             width: 2
-          }
+          },
+          connectNulls: true
         });
         legends.push(`${market}指数`);
-        
-        // 只需要添加一次x轴数据
-        if (index === 0) {
-          xAxisData.push(...klineData[market].map(item => item.date));
-        }
       }
     });
 
@@ -378,25 +427,7 @@ const MarketPERatioPage = () => {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {/* 控制面板 */}
           <Row gutter={[16, 16]} align="middle">
-            <Col xs={24} md={12}>
-              <Space>
-                <Text strong>市场选择：</Text>
-                <Radio.Group 
-                  options={[
-                    { label: '上证', value: '上证' },
-                    { label: '深证', value: '深证' },
-                    { label: '创业板', value: '创业板' },
-                    { label: '科创版', value: '科创版' }
-                  ]}
-                  value={selectedMarkets}
-                  onChange={(e) => handleMarketChange(e.target.value)}
-                  optionType="button"
-                  buttonStyle="solid"
-                  defaultValue={selectedMarkets}
-                />
-              </Space>
-            </Col>
-            <Col xs={24} md={12}>
+            <Col xs={24} md={24}>
               <Space>
                 <Text strong>图表类型：</Text>
                 <Radio.Group onChange={handleChartTypeChange} value={chartType}>
