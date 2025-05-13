@@ -68,8 +68,12 @@ const MarketPERatioPage = () => {
 
   // 生成组合图表选项
   const getCombinedChartOption = () => {
-    // 如果数据未加载完成，返回空选项
-    if (loading || !peRatioData || Object.keys(peRatioData).length === 0) {
+    // 添加数据验证
+    console.log('市盈率数据:', peRatioData);
+    console.log('K线数据:', klineData);
+    
+    // 确保数据存在
+    if (!peRatioData || Object.keys(peRatioData).length === 0) {
       return { series: [] };
     }
 
@@ -78,7 +82,7 @@ const MarketPERatioPage = () => {
     let xAxisData = [];
     const legends = [];
     
-    // 首先获取所有市场数据的日期并合并去重，确保时间轴对齐
+    // 首先获取所有市场市盈率数据的日期并合并去重，作为基础时间轴
     selectedMarkets.forEach(market => {
       if (peRatioData[market] && peRatioData[market].length > 0) {
         const dates = peRatioData[market].map(item => item.date);
@@ -86,19 +90,18 @@ const MarketPERatioPage = () => {
       }
     });
     
-    // 去重并排序日期
+    // 去重并排序日期 - 这将作为统一的时间轴
     xAxisData = [...new Set(xAxisData)].sort();
     
     // 处理选中的市场
     selectedMarkets.forEach(market => {
       if (peRatioData[market] && peRatioData[market].length > 0) {
-        // 创建日期到市盈率的映射
+        // 市盈率数据处理保持不变
         const peMap = {};
         peRatioData[market].forEach(item => {
           peMap[item.date] = item.pe_ratio;
         });
         
-        // 根据统一的时间轴创建数据点
         const peData = xAxisData.map(date => peMap[date] || null);
         
         series.push({
@@ -115,19 +118,19 @@ const MarketPERatioPage = () => {
         });
         legends.push(`${market}市盈率`);
         
-        // K线收盘价数据
+        // 收盘价数据处理 - 只显示市盈率数据对应日期的收盘价
         if (klineData[market] && klineData[market].length > 0) {
-          // 创建日期到收盘价的映射
           const closeMap = {};
           klineData[market].forEach(item => {
             closeMap[item.date] = item.close;
           });
           
-          // 根据统一的时间轴创建数据点
-          const closeData = xAxisData.map(date => closeMap[date] || null);
+          // 只使用市盈率数据中的日期来获取对应的收盘价
+          const peDates = peRatioData[market].map(item => item.date);
+          const closeData = peDates.map(date => closeMap[date] || null);
           
           series.push({
-            name: `${market}指数`,
+            name: `${market}收盘价`,
             type: 'line',
             yAxisIndex: 1,
             data: closeData,
@@ -139,7 +142,7 @@ const MarketPERatioPage = () => {
             },
             connectNulls: true
           });
-          legends.push(`${market}指数`);
+          legends.push(`${market}收盘价`);
         }
       }
     });
@@ -215,7 +218,7 @@ const MarketPERatioPage = () => {
     let xAxisData = [];
     const legends = [];
     
-    // 首先获取所有市场数据的日期并合并去重，确保时间轴对齐
+    // 首先获取所有市场市盈率数据的日期并合并去重，作为基础时间轴
     selectedMarkets.forEach(market => {
       if (peRatioData[market] && peRatioData[market].length > 0) {
         const dates = peRatioData[market].map(item => item.date);
@@ -223,7 +226,7 @@ const MarketPERatioPage = () => {
       }
     });
     
-    // 去重并排序日期
+    // 去重并排序日期 - 这将作为统一的时间轴
     xAxisData = [...new Set(xAxisData)].sort();
     
     // 处理选中的市场
