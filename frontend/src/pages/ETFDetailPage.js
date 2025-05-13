@@ -9,7 +9,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getETFInfo, getETFKline, getETFComparativeChange } from '../services/etfService'; // 引入 etfService
-import ETFKLineChart from '../components/ETFKLineChart';
+import ETFKLineChart from '../components/etf/ETFKLineChart';
 import { Typography, Alert, Spin } from 'antd';
 
 const { Title } = Typography;

@@ -9,8 +9,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
-import StockKLineChart from '../components/StockKLineChart';
-import IndexKLineChart from '../components/IndexKLineChart';
+import StockKLineChart from '../components/stock/StockKLineChart';
+import IndexKLineChart from '../components/index/IndexKLineChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 

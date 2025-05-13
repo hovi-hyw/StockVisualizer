@@ -9,8 +9,8 @@ import React, { useState } from 'react';
 import { Typography, Breadcrumb, Row, Col } from 'antd';
 import { HomeOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import DocsList from '../components/DocsList';
-import MarkdownViewer from '../components/MarkdownViewer';
+import DocsList from '../components/docs/DocsList';
+import MarkdownViewer from '../components/docs/MarkdownViewer';
 
 const { Title, Paragraph } = Typography;
 

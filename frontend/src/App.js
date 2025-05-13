@@ -22,8 +22,8 @@ import ETFDetailPage from './pages/ETFDetailPage';
 import DocsPage from './pages/DocsPage';
 
 // 导入布局组件
-import Footer from './components/Footer';
-import NavButtons from './components/NavButtons';
+import Footer from './components/common/Footer';
+import NavButtons from './components/common/NavButtons';
 
 // 导入样式
 import './App.css';

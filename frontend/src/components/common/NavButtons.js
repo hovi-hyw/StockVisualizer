@@ -11,9 +11,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button, Space, Dropdown, Input, List, Typography, Modal, message, Tooltip } from 'antd';
 import { HomeOutlined, LineChartOutlined, FundOutlined, StarOutlined, PlusOutlined, MinusOutlined, SearchOutlined, BulbOutlined, BulbFilled, ExportOutlined } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
-import { getStockList } from '../services/stockService';
-import { getIndexList } from '../services/indexService';
-import { useTheme } from '../contexts/ThemeContext';
+import { getStockList } from '../../services/stockService';
+import { getIndexList } from '../../services/indexService';
+import { useTheme } from '../../contexts/ThemeContext';
 
 /**
  * 导航按钮组件

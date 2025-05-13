@@ -1,29 +1,27 @@
-// frontend/src/components/StockKLineChart.js
+// frontend/src/components/ETFKLineChart.js
 /**
- * 此组件用于展示股票K线图。
- * 使用ECharts绘制股票K线图，包含K线、量能、真实涨跌和对比涨跌四个子图表。
+ * 此组件用于展示ETF的K线图。
+ * 使用ECharts绘制ETF的K线图，包含K线、量能和对比涨跌三个子图表。
  * Authors: hovi.hyw & AI
  * Date: 2025-03-12
- * 更新: 2025-03-15 - 添加对比涨跌图表，调整图表高度为原来的80%
  */
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import { formatDate, formatLargeNumber } from '../utils/formatters';
-import { getStockRealChange } from '../services/stockService';
+import { formatDate, formatLargeNumber } from '../../utils/formatters';
 
 /**
- * 股票K线图组件
+ * ETF K线图组件
  * @param {Object} props - 组件属性
  * @param {Array} props.data - K线数据
  * @param {string} props.title - 图表标题
  * @param {string} props.theme - 图表主题，'light'或'dark'
- * @param {string} props.symbol - 股票代码，用于获取真实涨跌数据
+ * @param {string} props.symbol - ETF代码，用于获取对比涨跌数据
  */
-const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbol }) => {
+const ETFKLineChart = ({ data, title = 'ETF K线图', theme = 'light', symbol }) => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
-  const [realChangeData, setRealChangeData] = useState(null);
+  const [indexRealChangeData, setIndexRealChangeData] = useState(null);
 
   useEffect(() => {
     // 初始化图表
@@ -70,36 +68,18 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
     }
   }, [theme]);
 
-  // 获取真实涨跌数据和对比涨跌数据
+  // 直接使用K线数据计算对比涨跌数据
   useEffect(() => {
-    const fetchRealChangeData = async () => {
-      if (!data || !data.data || data.data.length === 0 || !symbol) return;
-      
-      try {
-        // 获取日期范围
-        const startDate = data.data[0]?.date;
-        const endDate = data.data[data.data.length - 1]?.date;
-        const dateParams = {
-          start_date: startDate,
-          end_date: endDate
-        };
-        
-        // 获取个股真实涨跌数据
-        const realChangeResponse = await getStockRealChange(symbol, dateParams);
-        
-        // 确保返回的数据有效
-        if (realChangeResponse && realChangeResponse.data && realChangeResponse.data.length > 0) {
-          console.log('成功获取股票真实涨跌数据:', realChangeResponse.data.length, '条');
-          setRealChangeData(realChangeResponse);
-        } else {
-          console.error('获取的股票真实涨跌数据为空');
-        }
-      } catch (error) {
-        console.error(`获取股票真实涨跌数据失败:`, error);
-      }
-    };
-
-    fetchRealChangeData();
+    if (!data || !data.data || data.data.length === 0 || !symbol) return;
+    
+    try {
+      // 直接使用K线数据，不再单独请求对比涨跌数据
+      // 后端已经在K线数据中包含了所有需要的信息
+      console.log('使用K线数据计算ETF对比涨跌数据');
+      setIndexRealChangeData(data);
+    } catch (error) {
+      console.error('处理ETF对比涨跌数据失败:', error);
+    }
   }, [data, symbol]);
 
   useEffect(() => {
@@ -118,48 +98,84 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
     ]);
     const amounts = sortedData.map(item => parseFloat(item.amount) / 1000000); // 除以100万
     
-    // 创建真实涨跌数据数组
-    let realChangeValues = [];
+    // 创建对比涨跌数据数组
     let comparativeChangeValues = [];
     let referenceNames = [];
     let referenceIndices = [];
     
-    // 处理真实涨跌数据和对比涨跌数据
-    if (realChangeData && realChangeData.data) {
-      const realChangeDataArray = realChangeData.data;
+    // 设置默认参考指数（仅在后端数据缺失时使用）
+    let defaultReferenceName = '无参考';
+    let defaultReferenceIndex = '';
+    
+    // 注意：我们期望后端提供参考指数信息，这里只是作为后备方案
+    
+    // 处理对比涨跌数据
+    if (indexRealChangeData && indexRealChangeData.data) {
+      // 处理ETF的对比涨跌数据
+      const indexRealChangeDataArray = indexRealChangeData.data;
       
-      // 提取真实涨跌值
-      realChangeValues = sortedData.map(item => {
-        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        // 确保将真实涨跌值转换为数字类型并乘以100
-        return matchingItem ? parseFloat(matchingItem.real_change) * 100 : 0;
-      });
-      
-      // 提取对比涨跌值（直接从后端获取，不需要前端计算）
+      // 直接从K线数据中获取对比涨跌值（当天涨跌幅减去参考指数当天涨跌幅）
       comparativeChangeValues = sortedData.map(item => {
-        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        // 确保将对比涨跌值转换为数字类型并乘以100
-        return matchingItem ? parseFloat(matchingItem.comparative_change) * 100 : 0;
+        // 获取当日涨跌幅和参考指数涨跌幅
+        let dailyChange = 0;
+        let referenceChange = 0;
+        
+        // 获取当日涨跌幅(change_rate)
+        if (item.change_rate !== null && item.change_rate !== undefined) {
+          const parsedDailyChange = typeof item.change_rate === 'number' 
+            ? item.change_rate 
+            : parseFloat(item.change_rate);
+          
+          if (!isNaN(parsedDailyChange)) {
+            dailyChange = parsedDailyChange;
+          }
+        }
+        
+        // 获取参考指数涨跌幅(reference_change_rate)
+        if (item.reference_change_rate !== null && item.reference_change_rate !== undefined) {
+          const parsedReferenceChange = typeof item.reference_change_rate === 'number' 
+            ? item.reference_change_rate 
+            : parseFloat(item.reference_change_rate);
+          
+          if (!isNaN(parsedReferenceChange)) {
+            referenceChange = parsedReferenceChange;
+          }
+        }
+        
+        // 对比涨跌 = 当天涨跌幅 - 参考指数当天涨跌幅
+        const result = dailyChange - referenceChange;
+        return result;
       });
       
-      // 提取参考指数名称和代码
-      referenceNames = sortedData.map(item => {
-        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        return matchingItem ? matchingItem.reference_name || '无参考' : '无参考';
-      });
-      
-      referenceIndices = sortedData.map(item => {
-        const matchingItem = realChangeDataArray.find(rcItem => rcItem.date === item.date);
-        return matchingItem ? matchingItem.reference_index || '' : '';
-      });
-      
-      // 确保真实涨跌数据有效
-      if (realChangeValues.length === 0 || realChangeValues.every(val => val === 0)) {
-        console.warn('真实涨跌数据为空或全为0，请检查数据源');
-      } else {
-        console.log('真实涨跌数据已加载:', realChangeValues.length, '条');
-        console.log('对比涨跌数据已加载:', comparativeChangeValues.length, '条');
+      // 检查对比涨跌数据是否有效
+      if (comparativeChangeValues.every(val => val === 0 || val === null || isNaN(val)) && indexRealChangeDataArray.length > 0) {
+        console.warn('对比涨跌数据无效，可能是后端未提供reference_change_rate字段');
       }
+      
+      // 检查计算后的对比涨跌数据是否有效
+      const hasInvalidValues = comparativeChangeValues.some(val => isNaN(val));
+      if (hasInvalidValues) {
+        console.error('对比涨跌数据包含无效值(NaN)，请检查数据源');
+      }
+      
+      // 直接从K线数据中获取参考指数信息
+      if (sortedData.length > 0) {
+        // 检查K线数据中是否包含参考指数信息
+        const hasReferenceInfo = sortedData.some(item => item.reference_name || item.reference_index);
+        
+        if (hasReferenceInfo) {
+          console.log('从K线数据中获取到参考指数信息');
+          referenceNames = sortedData.map(item => item.reference_name || defaultReferenceName);
+          referenceIndices = sortedData.map(item => item.reference_index || defaultReferenceIndex);
+        } else {
+          console.warn('K线数据中缺少参考指数信息');
+          // 使用默认值
+          referenceNames = sortedData.map(() => defaultReferenceName);
+          referenceIndices = sortedData.map(() => defaultReferenceIndex);
+        }
+      }
+      
+      console.log('对比涨跌数据已加载:', comparativeChangeValues.length, '条');
     }
     
     // 计算网格布局和坐标轴索引
@@ -169,22 +185,14 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
     grids.push({
       left: '5%',
       right: '5%',
-      height: '48%'
+      height: '60%'
     });
     
     // 设置成交量图网格
     grids.push({
       left: '5%',
       right: '5%',
-      top: '53%',
-      height: '12%'
-    });
-    
-    // 添加真实涨跌图网格
-    grids.push({
-      left: '5%',
-      right: '5%',
-      top: '70%',
+      top: '65%',
       height: '12%'
     });
     
@@ -192,7 +200,7 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
     grids.push({
       left: '5%',
       right: '5%',
-      top: '87%',
+      top: '82%',
       height: '12%'
     });
     
@@ -222,24 +230,82 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
           const high = sortedData[index].high;
           const volume = sortedData[index].volume;
           
-          // 获取真实涨跌数据和对比涨跌数据
-          let realChange = '暂无数据';
+          // 获取对比涨跌数据
           let comparativeChange = '暂无数据';
-          let referenceName = '无参考';
+          let referenceName = defaultReferenceName;
           let referenceIndex = '';
+          let dailyChange = '暂无数据';
+          let referenceChange = '暂无数据';
           
-          if (realChangeValues && realChangeValues.length > index) {
-            realChange = realChangeValues[index].toFixed(2) + '%';
-          }
           if (comparativeChangeValues && comparativeChangeValues.length > index) {
             const value = comparativeChangeValues[index];
             comparativeChange = !isNaN(value) ? value.toFixed(2) + '%' : '暂无数据';
           }
           if (referenceNames && referenceNames.length > index) {
-            referenceName = referenceNames[index] || '无参考';
+            referenceName = referenceNames[index] || defaultReferenceName;
           }
           if (referenceIndices && referenceIndices.length > index) {
             referenceIndex = referenceIndices[index];
+          }
+          
+          // 获取当日涨跌幅和参考指数涨跌幅
+          // 首先尝试从K线数据中直接获取
+          const currentItem = sortedData[index];
+          
+          // 获取当日涨跌幅(change_rate)
+          if (currentItem.change_rate !== null && currentItem.change_rate !== undefined) {
+            const parsedDailyChange = typeof currentItem.change_rate === 'number' 
+              ? currentItem.change_rate 
+              : parseFloat(currentItem.change_rate);
+            
+            if (!isNaN(parsedDailyChange)) {
+              dailyChange = parsedDailyChange.toFixed(2) + '%';
+            }
+          }
+          
+          // 获取参考指数涨跌幅(reference_change_rate)
+          if (currentItem.reference_change_rate !== null && currentItem.reference_change_rate !== undefined) {
+            const parsedReferenceChange = typeof currentItem.reference_change_rate === 'number' 
+              ? currentItem.reference_change_rate 
+              : parseFloat(currentItem.reference_change_rate);
+            
+            if (!isNaN(parsedReferenceChange)) {
+              referenceChange = parsedReferenceChange.toFixed(2) + '%';
+            }
+          }
+          
+          // 如果K线数据中没有这些字段，则尝试从indexRealChangeData中获取
+          if ((dailyChange === '暂无数据' || referenceChange === '暂无数据') && indexRealChangeData && indexRealChangeData.data) {
+            const matchingItem = indexRealChangeData.data.find(item => item.date === sortedData[index].date);
+            if (matchingItem) {
+              // 如果当日涨跌幅还没有值，则尝试从matchingItem中获取
+              if (dailyChange === '暂无数据') {
+                // 安全解析change_rate
+                if (matchingItem.change_rate !== null && matchingItem.change_rate !== undefined) {
+                  const parsedDailyChange = typeof matchingItem.change_rate === 'number' 
+                    ? matchingItem.change_rate 
+                    : parseFloat(matchingItem.change_rate);
+                  
+                  if (!isNaN(parsedDailyChange)) {
+                    dailyChange = parsedDailyChange.toFixed(2) + '%';
+                  }
+                }
+              }
+              
+              // 如果参考指数涨跌幅还没有值，则尝试从matchingItem中获取
+              if (referenceChange === '暂无数据') {
+                // 安全解析reference_rate
+                if (matchingItem.reference_rate !== null && matchingItem.reference_rate !== undefined) {
+                  const parsedReferenceChange = typeof matchingItem.reference_rate === 'number' 
+                    ? matchingItem.reference_rate 
+                    : parseFloat(matchingItem.reference_rate);
+                  
+                  if (!isNaN(parsedReferenceChange)) {
+                    referenceChange = parsedReferenceChange.toFixed(2) + '%';
+                  }
+                }
+              }
+            }
           }
           
           // 格式化参考指数显示
@@ -261,9 +327,10 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
               <p style="margin: 0">成交额: ${(parseFloat(sortedData[index].amount)/1000000).toFixed(2)}百万</p>
           `;
           
-          tooltipContent += `<p style="margin: 0">真实涨跌: ${realChange}</p>`;
           tooltipContent += `<p style="margin: 0">对比涨跌: ${comparativeChange}</p>`;
           tooltipContent += `<p style="margin: 0">参考指数: ${referenceText}</p>`;
+          tooltipContent += `<p style="margin: 0">当日涨跌幅: ${dailyChange}</p>`;
+          tooltipContent += `<p style="margin: 0">参考指数涨跌幅: ${referenceChange}</p>`;
           
           tooltipContent += `</div>`;
           
@@ -307,18 +374,6 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
           axisLine: { onZero: false },
           axisTick: { show: false },
           splitLine: { show: false },
-          axisLabel: { show: false },
-          splitNumber: 20
-        },
-        {
-          type: 'category',
-          gridIndex: 3,
-          data: dates,
-          scale: true,
-          boundaryGap: false,
-          axisLine: { onZero: false },
-          axisTick: { show: false },
-          splitLine: { show: false },
           axisLabel: { show: true },
           splitNumber: 20
         }
@@ -351,33 +406,20 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
           axisLine: { show: true },
           axisTick: { show: true },
           splitLine: { show: false },
-          name: '真实涨跌(%)',
-        },
-        {
-          scale: true,
-          gridIndex: 3,
-          splitNumber: 2,
-          axisLabel: { 
-            show: true,
-            formatter: '{value}%'
-          },
-          axisLine: { show: true },
-          axisTick: { show: true },
-          splitLine: { show: false },
           name: '对比涨跌',
         }
       ],
       dataZoom: [
         {
           type: 'inside',
-          xAxisIndex: [0, 1, 2, 3],
+          xAxisIndex: [0, 1, 2],
           start: 0,
           end: 100,
           id: 'klineInsideZoom'
         },
         {
           show: true,
-          xAxisIndex: [0, 1, 2, 3],
+          xAxisIndex: [0, 1, 2],
           type: 'slider',
           bottom: '0%',
           start: 0,
@@ -406,121 +448,32 @@ const StockKLineChart = ({ data, title = '股票K线图', theme = 'light', symbo
           itemStyle: {
             color: function(params) {
               const index = params.dataIndex;
-              const close = klineData[index].close;
-              const open = klineData[index].open;
+              const close = sortedData[index].close;
+              const open = sortedData[index].open;
               return close > open ? '#c23531' : '#314656';
             }
           }
         },
         {
-          name: '真实涨跌',
-          type: 'line',
-          xAxisIndex: 2,
-          yAxisIndex: 2,
-          data: realChangeValues,
-          smooth: true,
-          itemStyle: {
-            color: function(params) {
-              // 涨跌颜色：涨为红色，跌为绿色
-              return params.value >= 0 ? '#c23531' : '#3fbf67';
-            }
-          },
-          label: {
-            show: false,
-            position: function(params) {
-              return params.value >= 0 ? 'top' : 'bottom';
-            },
-            formatter: function(params) {
-              return params.value.toFixed(2) + '%';
-            },
-            fontSize: 10,
-            distance: 5,
-            color: function(params) {
-              return params.value >= 0 ? '#c23531' : '#3fbf67';
-            }
-          },
-          markLine: {
-            symbol: 'none',
-            data: [
-              {
-                yAxis: 0,
-                lineStyle: {
-                  color: '#999',
-                  type: 'dashed'
-                },
-                label: {
-                  show: true,
-                  position: 'end',
-                  formatter: '0%'
-                }
-              }
-            ]
-          }
-        },
-        {
           name: '对比涨跌',
           type: 'bar',
-          xAxisIndex: 3,
-          yAxisIndex: 3,
-          data: comparativeChangeValues.map(val => isNaN(val) ? 0 : val), // 确保没有NaN值
-          label: {
-            show: false
-          },
+          xAxisIndex: 2,
+          yAxisIndex: 2,
+          data: comparativeChangeValues,
+          barWidth: '60%',
           itemStyle: {
             color: function(params) {
-              // 确保值存在且不是NaN
-              if (params.value === undefined || isNaN(params.value)) return '#999';
-              return params.value >= 0 ? '#c23531' : '#3fbf67';
+              return params.data >= 0 ? '#c23531' : '#314656';
             }
-          },
-          markLine: {
-            symbol: 'none',
-            data: [
-              {
-                yAxis: 0,
-                lineStyle: {
-                  color: '#999',
-                  type: 'dashed'
-                },
-                label: {
-                  show: true,
-                  position: 'end',
-                  formatter: '0%'
-                }
-              }
-            ]
           }
         }
       ]
     };
 
-    // 设置图表选项
     chartInstance.current.setOption(option);
-    
-    // 添加dataZoom事件监听，触发自定义事件通知其他图表
-    chartInstance.current.on('dataZoom', function(params) {
-      // 创建自定义事件，传递dataZoom信息
-      const event = new CustomEvent('echarts:dataZoom', {
-        detail: params
-      });
-      // 触发事件，通知其他图表
-      window.dispatchEvent(event);
-    });
-  }, [data, realChangeData, theme, title]);
+  }, [data, indexRealChangeData]);
 
-  return (
-    <div>
-      <div 
-        ref={chartRef} 
-        style={{ 
-          width: '100%', 
-          height: '72vh',  // 调整为原来的80%（原来90vh*80%=72vh）
-          margin: '0 0 20px 0' // 添加一些下边距
-        }}
-        className="kline-chart-container"
-      />
-    </div>
-  );
+  return <div ref={chartRef} style={{ width: '100%', height: '600px' }} />;
 };
 
-export default StockKLineChart;
+export default ETFKLineChart;
