@@ -147,7 +147,7 @@ const ValueETFList = () => {
               <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
                 <Space>
                   <Text strong>
-                    <Link to={`/fund/${item.code}`}>{item.name}</Link>
+                    <Link to={`/detail/etf/${item.code}`}>{item.name}</Link>
                   </Text>
                   <Text type="secondary">{item.code}</Text>
                 </Space>
