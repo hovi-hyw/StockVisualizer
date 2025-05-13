@@ -106,3 +106,4 @@ docker-compose.prod.yml
 !/public/robots.txt
 frontend/package-lock.json
 package-lock.json
+test.ipynb
