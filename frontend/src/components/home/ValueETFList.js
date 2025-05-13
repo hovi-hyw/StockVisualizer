@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, List, Typography, Space, Spin, Row, Col, Tooltip, Tag } from 'antd';
+import { Card, List, Typography, Space, Spin, Row, Col, Tooltip, Tag, Select } from 'antd';
 import { FundOutlined, RiseOutlined, FallOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { formatLargeNumber } from '../../utils/formatters';
@@ -40,12 +40,19 @@ const ValueETFList = () => {
     return currentTime >= 900 && currentTime <= 1600;
   };
   
+  // 状态定义 - 排序相关
+  const [sortBy, setSortBy] = useState('change');
+  const [sortOrder, setSortOrder] = useState('desc');
+  
   // 获取价值ETF数据
   useEffect(() => {
     const fetchValueETFs = async () => {
       try {
         setLoading(true);
-        const data = await getValueETFs({ limit: 5 });
+        const data = await getValueETFs({ 
+          sort_by: sortBy, 
+          sort_order: sortOrder 
+        });
         if (data && Array.isArray(data)) {
           setEtfList(data);
         }
@@ -57,6 +64,7 @@ const ValueETFList = () => {
         setLoading(false);
       }
     };
+
 
     // 首次加载数据
     fetchValueETFs();
@@ -71,7 +79,7 @@ const ValueETFList = () => {
 
     // 组件卸载时清除定时器
     return () => clearInterval(intervalId);
-  }, []);
+  }, [sortBy, sortOrder]);
   
   // 根据涨跌幅返回不同颜色
   const getChangeColor = (change) => {
@@ -96,6 +104,30 @@ const ValueETFList = () => {
           >
             <QuestionCircleOutlined className="info-icon" />
           </Tooltip>
+        </Space>
+      }
+      extra={
+        <Space>
+          <span>排序：</span>
+          <Select 
+            value={sortBy} 
+            onChange={(value) => setSortBy(value)}
+            style={{ width: 100 }}
+            options={[
+              { value: 'name', label: '名称' },
+              { value: 'price', label: '金额' },
+              { value: 'change', label: '涨幅' }
+            ]}
+          />
+          <Select
+            value={sortOrder}
+            onChange={(value) => setSortOrder(value)}
+            style={{ width: 80 }}
+            options={[
+              { value: 'asc', label: '升序' },
+              { value: 'desc', label: '降序' }
+            ]}
+          />
         </Space>
       }
       className="etf-card"

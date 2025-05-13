@@ -80,7 +80,8 @@ export const getHotFunds = async (params = {}) => {
 /**
  * 获取价值型ETF列表
  * @param {Object} params - 请求参数
- * @param {number} params.limit - 返回数量限制，默认为5
+ * @param {string} [params.sort_by] - 排序字段，可选值：name(名称), price(金额), change(涨幅)
+ * @param {string} [params.sort_order] - 排序顺序，可选值：asc(升序), desc(降序)，默认为desc
  * @returns {Promise<Array>} 价值型ETF列表
  */
 export const getValueETFs = async (params = {}) => {
