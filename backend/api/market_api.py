@@ -198,6 +198,32 @@ async def get_industry_stocks(industry_name: str):
     Returns:
         List[Dict[str, Any]]: 行业相关个股数据列表
     """
+    try:
+        # 使用akshare获取行业成分股数据
+        stocks_data = ak.stock_board_industry_cons_em(symbol=industry_name)
+        
+        # 按照涨跌幅排序
+        stocks_data = stocks_data.sort_values(by='涨跌幅', ascending=False)
+        
+        result = []
+        for _, row in stocks_data.iterrows():
+            change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
+            
+            result.append({
+                "name": row.get('名称', ''),
+                "code": row.get('代码', ''),
+                "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
+                "price": float(row.get('最新价', 0)),
+                "volume": f"{float(row.get('成交量', 0))/10000:.1f}万",
+                "turnover": f"{float(row.get('成交额', 0))/10000:.1f}万"
+            })
+        
+        return result
+    except Exception as e:
+        import traceback
+        print(f"获取行业{industry_name}成分股数据失败: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to fetch industry stocks: {str(e)}")
 
 @router.get("/pe-ratio", response_model=List[Dict[str, Any]])
 async def get_market_pe_ratio(market: str = Query(..., description="市场名称，可选值：上证、深证、创业板、科创版")):

@@ -6,11 +6,10 @@
  * Date: 2025-03-26
  */
 
-import React, { useState, useEffect } from 'react';
-import { Card, List, Typography, Space, Spin, Row, Col, Tooltip, Tag, Select } from 'antd';
-import { FundOutlined, RiseOutlined, FallOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { FallOutlined, FundOutlined, QuestionCircleOutlined, RiseOutlined } from '@ant-design/icons';
+import { Card, List, Select, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatLargeNumber } from '../../utils/formatters';
 import { getValueETFs } from '../../services/fundService';
 
 const { Title, Text } = Typography;
@@ -28,30 +27,30 @@ const ValueETFList = () => {
   const [etfList, setEtfList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // 检查是否在交易时间内（9:00-16:00）
   const isTradeTime = () => {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const currentTime = hours * 100 + minutes;
-    
+
     // 交易时间：9:00-16:00
     return currentTime >= 900 && currentTime <= 1600;
   };
-  
+
   // 状态定义 - 排序相关
   const [sortBy, setSortBy] = useState('change');
   const [sortOrder, setSortOrder] = useState('desc');
-  
+
   // 获取价值ETF数据
   useEffect(() => {
     const fetchValueETFs = async () => {
       try {
         setLoading(true);
-        const data = await getValueETFs({ 
-          sort_by: sortBy, 
-          sort_order: sortOrder 
+        const data = await getValueETFs({
+          sort_by: sortBy,
+          sort_order: sortOrder
         });
         if (data && Array.isArray(data)) {
           setEtfList(data);
@@ -80,7 +79,7 @@ const ValueETFList = () => {
     // 组件卸载时清除定时器
     return () => clearInterval(intervalId);
   }, [sortBy, sortOrder]);
-  
+
   // 根据涨跌幅返回不同颜色
   const getChangeColor = (change) => {
     // 确保change是字符串类型
@@ -91,12 +90,52 @@ const ValueETFList = () => {
     return value >= 0 ? '#cf1322' : '#3f8600';
   };
 
+  // 表格列定义
+  const columns = [
+    {
+      title: '名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <Link to={`/detail/etf/${record.code}`}>{text}</Link>
+      ),
+    },
+    {
+      title: '代码',
+      dataIndex: 'code',
+      key: 'code',
+    },
+    {
+      title: '价格',
+      dataIndex: 'price',
+      key: 'price',
+      sorter: (a, b) => a.price - b.price,
+      render: (text) => text ? text.toFixed(2) : '-',
+    },
+    {
+      title: '涨跌幅',
+      dataIndex: 'change',
+      key: 'change',
+      sorter: (a, b) => {
+        const aValue = parseFloat(a.change.replace('%', ''));
+        const bValue = parseFloat(b.change.replace('%', ''));
+        return aValue - bValue;
+      },
+      render: (text) => {
+        const value = parseFloat(text.replace('%', ''));
+        const color = value >= 0 ? '#cf1322' : '#3f8600';
+        const icon = value >= 0 ? <RiseOutlined /> : <FallOutlined />;
+        return <span style={{ color }}>{icon} {text}</span>;
+      },
+    },
+  ];
+
   return (
-    <Card 
+    <Card
       title={
         <Space>
           <Title level={4}><FundOutlined /> 价值ETF</Title>
-          <Tooltip 
+          <Tooltip
             title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0, color: '#fff' }}>价值型ETF基金通常投资于被认为价值被低估的股票，这些股票的市盈率、市净率等估值指标相对较低。</Typography.Paragraph>}
             placement="topRight"
             overlayStyle={{ maxWidth: '300px' }}
@@ -104,30 +143,6 @@ const ValueETFList = () => {
           >
             <QuestionCircleOutlined className="info-icon" />
           </Tooltip>
-        </Space>
-      }
-      extra={
-        <Space>
-          <span>排序：</span>
-          <Select 
-            value={sortBy} 
-            onChange={(value) => setSortBy(value)}
-            style={{ width: 100 }}
-            options={[
-              { value: 'name', label: '名称' },
-              { value: 'price', label: '金额' },
-              { value: 'change', label: '涨幅' }
-            ]}
-          />
-          <Select
-            value={sortOrder}
-            onChange={(value) => setSortOrder(value)}
-            style={{ width: 80 }}
-            options={[
-              { value: 'asc', label: '升序' },
-              { value: 'desc', label: '降序' }
-            ]}
-          />
         </Space>
       }
       className="etf-card"
@@ -140,26 +155,19 @@ const ValueETFList = () => {
       ) : error ? (
         <div style={{ color: 'orange', marginBottom: '10px' }}>{error}</div>
       ) : (
-        <List
+        <Table
+          columns={columns}
           dataSource={etfList}
-          renderItem={(item) => (
-            <List.Item>
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-                <Space>
-                  <Text strong>
-                    <Link to={`/detail/etf/${item.code}`}>{item.name}</Link>
-                  </Text>
-                  <Text type="secondary">{item.code}</Text>
-                </Space>
-                <Space>
-                  <Text style={{ color: getChangeColor(item.change) }}>
-                    {parseFloat(item.change) >= 0 ? <RiseOutlined /> : <FallOutlined />} {item.change}
-                  </Text>
-                  <Tag color="blue">{item.type}</Tag>
-                </Space>
-              </div>
-            </List.Item>
-          )}
+          rowKey="code"
+          pagination={false}
+          size="small"
+          scroll={{ y: 500 }}
+          onChange={(pagination, filters, sorter) => {
+            if (sorter.field) {
+              setSortBy(sorter.field);
+              setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+            }
+          }}
         />
       )}
     </Card>

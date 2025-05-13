@@ -37,6 +37,7 @@ services:
       - /app/node_modules  # 排除node_modules目录，使用容器内的依赖
     environment:
       - CHOKIDAR_USEPOLLING=true  # 在某些环境下需要启用轮询以检测文件变化
+      - CHOKIDAR_INTERVAL=5000
       - WDS_SOCKET_PORT=3001  # WebSocket端口设置
       - REACT_APP_API_URL=http://localhost:8970/api # 浏览器需要访问 localhost
     networks:
