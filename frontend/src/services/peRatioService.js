@@ -82,10 +82,18 @@ export const getMarketKLineData = async (market) => {
 export const getAllMarketKLineData = async () => {
   try {
     const markets = ["上证", "深证", "创业板", "科创版"];
+    const marketCodeMap = {
+      "上证": "000001",
+      "深证": "399001",
+      "创业板": "399006",
+      "科创版": "000688"
+    };
     const results = {};
     
-    // 并行获取所有市场的K线数据
-    const promises = markets.map(market => getMarketKLineData(market));
+    // 并行获取指定市场的K线数据
+    const promises = markets.map(market => 
+      api.get(`/indices/${marketCodeMap[market]}/kline`)
+    );
     const responses = await Promise.all(promises);
     
     // 将结果组织成对象形式
@@ -95,7 +103,7 @@ export const getAllMarketKLineData = async () => {
     
     return results;
   } catch (error) {
-    console.error('获取所有市场K线数据失败:', error);
+    console.error('获取市场K线数据失败:', error);
     throw error;
   }
 };

@@ -265,35 +265,8 @@ async def get_market_pe_ratio(market: str = Query(..., description="市场名称
             return result
         except Exception as e:
             print(f"获取{market}市盈率数据失败: {str(e)}")
-            # 如果获取失败，返回模拟数据
-            # 生成过去30天的模拟数据
-            result = []
-            base_date = datetime.now()
+            raise HTTPException(status_code=500, detail=f"Failed to fetch {market} PE ratio data: {str(e)}")
             
-            # 根据不同市场设置不同的基准市盈率
-            base_pe = {
-                "上证": 12.5,
-                "深证": 25.8,
-                "创业板": 40.2,
-                "科创版": 55.6
-            }.get(market, 15.0)
-            
-            # 生成模拟数据
-            for i in range(30, 0, -1):
-                date = base_date - timedelta(days=i)
-                date_str = date.strftime("%Y-%m-%d")
-                # 添加一些随机波动
-                import random
-                pe_ratio = base_pe + random.uniform(-1.5, 1.5)
-                total_mv = 1000000 + random.uniform(-50000, 50000)  # 单位：亿元
-                
-                result.append({
-                    "date": date_str,
-                    "total_market_value": total_mv,
-                    "pe_ratio": pe_ratio
-                })
-            
-            return result
     except Exception as e:
         import traceback
         print(f"处理市盈率数据失败: {str(e)}")
@@ -301,7 +274,11 @@ async def get_market_pe_ratio(market: str = Query(..., description="市场名称
         raise HTTPException(status_code=500, detail=f"Failed to fetch PE ratio data: {str(e)}")
 
 @router.get("/kline", response_model=List[Dict[str, Any]])
-async def get_market_kline(market: str = Query(..., description="市场名称，可选值：上证、深证、创业板、科创版")):
+async def get_market_kline(
+        market: str = Query(..., description="市场名称，可选值：上证、深证、创业板、科创版"),
+        start_date: Optional[str] = Query(None, description="开始日期(YYYY-MM-DD)"),
+        end_date: Optional[str] = Query(None, description="结束日期(YYYY-MM-DD)")
+    ):
     """
     获取指定市场的K线数据。
     返回指定市场指数的历史K线数据。
@@ -329,108 +306,42 @@ async def get_market_kline(market: str = Query(..., description="市场名称，
         index_code = market_code_map.get(market)
         
         try:
-            # 使用akshare获取指数日线数据
-            # 根据指数代码获取K线数据，这里使用日线数据
-            kline_data = ak.stock_zh_index_daily(symbol=index_code)
+            # 从daily_index数据库获取K线数据
+            from backend.database.connection import get_db
+            from backend.services.index_service import IndexService
+            from backend.utils.date_utils import parse_date
+            
+            db = next(get_db())
+            index_service = IndexService()
+            
+            # 解析日期
+            start = parse_date(start_date) if start_date else None
+            end = parse_date(end_date) if end_date else None
+            
+            # 获取K线数据
+            kline_data = index_service.get_index_kline(db, index_code, start, end)
             
             # 处理数据格式
             result = []
-            for _, row in kline_data.iterrows():
-                # 转换日期格式
-                date_str = row.get('date', '')
-                if isinstance(date_str, pd.Timestamp):
-                    date_str = date_str.strftime("%Y-%m-%d")
-                
-                # 确保所有数值都是浮点数
-                open_price = float(row.get('open', 0))
-                high_price = float(row.get('high', 0))
-                low_price = float(row.get('low', 0))
-                close_price = float(row.get('close', 0))
-                volume = float(row.get('volume', 0))
-                
+            for item in kline_data.data:
                 result.append({
-                    "date": date_str,
-                    "open": open_price,
-                    "high": high_price,
-                    "low": low_price,
-                    "close": close_price,
-                    "volume": volume
+                    "date": item.date.strftime("%Y-%m-%d"),
+                    "open": float(item.open),
+                    "high": float(item.high),
+                    "low": float(item.low),
+                    "close": float(item.close),
+                    "volume": float(item.volume)
                 })
-            
-            # 只返回最近30天的数据
-            return result[-30:] if len(result) > 30 else result
-        except Exception as e:
-            print(f"获取{market}指数K线数据失败: {str(e)}")
-            # 如果获取失败，返回模拟数据
-            # 生成过去30天的模拟数据
-            result = []
-            base_date = datetime.now()
-            
-            # 根据不同市场设置不同的基准点位
-            base_points = {
-                "上证": 3000,
-                "深证": 10000,
-                "创业板": 2000,
-                "科创版": 1000
-            }.get(market, 3000)
-            
-            # 生成模拟数据
-            last_close = base_points
-            for i in range(30, 0, -1):
-                date = base_date - timedelta(days=i)
-                date_str = date.strftime("%Y-%m-%d")
-                
-                # 添加一些随机波动
-                import random
-                change_percent = random.uniform(-0.02, 0.02)  # 每日涨跌幅在-2%到2%之间
-                close_price = last_close * (1 + change_percent)
-                open_price = last_close * (1 + random.uniform(-0.01, 0.01))
-                high_price = max(open_price, close_price) * (1 + random.uniform(0, 0.01))
-                low_price = min(open_price, close_price) * (1 - random.uniform(0, 0.01))
-                volume = random.uniform(100000, 500000)
-                
-                result.append({
-                    "date": date_str,
-                    "open": round(open_price, 2),
-                    "high": round(high_price, 2),
-                    "low": round(low_price, 2),
-                    "close": round(close_price, 2),
-                    "volume": int(volume)
-                })
-                
-                last_close = close_price
             
             return result
+        except Exception as e:
+            print(f"获取{market}指数K线数据失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to fetch {market} index K-line data: {str(e)}")
     except Exception as e:
         import traceback
         print(f"处理K线数据失败: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to fetch K-line data: {str(e)}")
-    try:
-        # 使用akshare获取行业板块成分股数据
-        stocks_data = ak.stock_board_industry_cons_em(symbol=industry_name)
-        
-        result = []
-        for _, row in stocks_data.iterrows():
-            # 提取需要的数据字段
-            change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
-            amplitude = float(row.get('振幅', 0).strip('%')) if isinstance(row.get('振幅'), str) else float(row.get('振幅', 0))
-            
-            result.append({
-                "code": row.get('代码', ''),
-                "name": row.get('名称', ''),
-                "change_percent": change_percent,
-                "amplitude": amplitude,
-                "amount": float(row.get('成交额', 0)),
-                "turnover_rate": float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
-            })
-        
-        return result
-    except Exception as e:
-        import traceback
-        print(f"获取行业板块({industry_name})相关个股数据失败: {str(e)}")
-        print(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Failed to fetch industry stocks: {str(e)}")
 
 @router.get("/concept-stocks/{concept_name}", response_model=List[Dict[str, Any]])
 async def get_concept_stocks(concept_name: str):

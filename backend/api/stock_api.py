@@ -148,70 +148,7 @@ async def get_hot_stocks():
         import traceback
         print(f"获取热门个股数据失败: {str(e)}")
         print(traceback.format_exc())
-        # 出错时返回模拟数据
-        stocks = [
-            {"name": "阿里巴巴", "code": "09988", "change": "+2.45%", "hot": 95, "volume": "3.2亿"},
-            {"name": "腾讯控股", "code": "00700", "change": "+1.78%", "hot": 92, "volume": "2.8亿"},
-            {"name": "贵州茅台", "code": "600519", "change": "+0.89%", "hot": 88, "volume": "1.5亿"},
-            {"name": "宁德时代", "code": "300750", "change": "+3.21%", "hot": 86, "volume": "2.1亿"},
-            {"name": "比亚迪", "code": "002594", "change": "+2.67%", "hot": 85, "volume": "1.8亿"}
-        ]
-        return stocks
-
-
-@router.get("/yesterday-hot", response_model=List[Dict[str, Any]])
-async def get_yesterday_hot_stocks():
-    """
-    获取昨日热门个股数据。
-    返回昨日市场交易量大、关注度高的个股数据。
-
-    Returns:
-        List[Dict[str, Any]]: 昨日热门个股数据列表
-    """
-    try:
-        # 使用akshare获取昨日龙虎榜数据
-        yesterday_data = ak.stock_zt_pool_em(date="20230331")
-        
-        # 如果没有数据，使用模拟数据
-        if yesterday_data.empty:
-            # 模拟数据
-            stocks = [
-                {"name": "中国平安", "code": "601318", "change": "-0.75%", "hot": 90, "volume": "2.5亿"},
-                {"name": "招商银行", "code": "600036", "change": "+1.25%", "hot": 87, "volume": "1.9亿"},
-                {"name": "五粮液", "code": "000858", "change": "+0.56%", "hot": 84, "volume": "1.2亿"},
-                {"name": "美的集团", "code": "000333", "change": "-1.23%", "hot": 82, "volume": "1.6亿"},
-                {"name": "海康威视", "code": "002415", "change": "+1.45%", "hot": 80, "volume": "1.4亿"}
-            ]
-            return stocks
-        
-        result = []
-        for _, row in yesterday_data.head(10).iterrows():
-            change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
-            hot_score = min(100, max(60, 80 + change_percent * 2))
-            
-            result.append({
-                "name": row.get('名称', ''),
-                "code": row.get('代码', ''),
-                "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
-                "hot": int(hot_score),
-                "volume": row.get('成交额', '0') + '万'
-            })
-        
-        return result
-    except Exception as e:
-        import traceback
-        print(f"获取昨日热门个股数据失败: {str(e)}")
-        print(traceback.format_exc())
-        # 出错时返回模拟数据
-        stocks = [
-            {"name": "中国平安", "code": "601318", "change": "-0.75%", "hot": 90, "volume": "2.5亿"},
-            {"name": "招商银行", "code": "600036", "change": "+1.25%", "hot": 87, "volume": "1.9亿"},
-            {"name": "五粮液", "code": "000858", "change": "+0.56%", "hot": 84, "volume": "1.2亿"},
-            {"name": "美的集团", "code": "000333", "change": "-1.23%", "hot": 82, "volume": "1.6亿"},
-            {"name": "海康威视", "code": "002415", "change": "+1.45%", "hot": 80, "volume": "1.4亿"}
-        ]
-        return stocks
-
+        raise HTTPException(status_code=500, detail=f"Failed to fetch hot stocks: {str(e)}")
 
 @router.get("/stock-funds", response_model=List[Dict[str, Any]])
 async def get_stock_funds():
@@ -249,15 +186,7 @@ async def get_stock_funds():
         import traceback
         print(f"获取个股资金流向数据失败: {str(e)}")
         print(traceback.format_exc())
-        # 出错时返回模拟数据
-        stocks = [
-            {"name": "中国移动", "code": "600941", "inflow": "+5.2亿", "change": "+1.87%"},
-            {"name": "工商银行", "code": "601398", "inflow": "+3.8亿", "change": "+0.95%"},
-            {"name": "中国石油", "code": "601857", "inflow": "+2.9亿", "change": "+1.23%"},
-            {"name": "中国建筑", "code": "601668", "inflow": "+2.5亿", "change": "+0.78%"},
-            {"name": "中国人寿", "code": "601628", "inflow": "+2.1亿", "change": "+1.05%"}
-        ]
-        return stocks
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stock funds data: {str(e)}")
 
 
 @router.get("/{symbol}/real-change", response_model=Dict[str, Any])
