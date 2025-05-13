@@ -373,6 +373,13 @@ const NavButtons = () => {
         >
           <Link to="/etfs">ETF</Link>
         </Button>
+        <Button 
+          type={currentPath === '/market-pe-ratio' ? 'primary' : 'default'}
+          icon={<LineChartOutlined />}
+          size="middle"
+        >
+          <Link to="/market-pe-ratio">市盈率走势</Link>
+        </Button>
         <Dropdown
           open={favoriteVisible}
           onOpenChange={handleFavoriteVisibleChange}

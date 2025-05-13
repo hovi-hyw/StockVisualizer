@@ -20,6 +20,7 @@ import ETFListPage from './pages/ETFListPage';
 import DetailPage from './pages/DetailPage';
 import ETFDetailPage from './pages/ETFDetailPage';
 import DocsPage from './pages/DocsPage';
+import MarketPERatioPage from './pages/MarketPERatioPage';
 
 // 导入布局组件
 import Footer from './components/common/Footer';
@@ -59,6 +60,7 @@ const AppWithTheme = () => {
               <Route path="/detail/etf/:symbol" element={<ETFDetailPage />} />
               <Route path="/detail/:type/:symbol" element={<DetailPage />} />
               <Route path="/docs" element={<DocsPage />} />
+              <Route path="/market-pe-ratio" element={<MarketPERatioPage />} />
             </Routes>
           </Content>
           <Footer />
