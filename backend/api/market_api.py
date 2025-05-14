@@ -249,18 +249,32 @@ async def get_market_pe_ratio(market: str = Query(..., description="市场名称
             
             # 处理数据格式
             result = []
-            for _, row in pe_data.iterrows():
-                # 转换日期格式
-                date_str = row.get('日期', '')
-                # 确保市值和市盈率是数值类型
-                total_mv = float(row.get('总市值', 0))
-                pe_ratio = float(row.get('平均市盈率', 0))
-                
-                result.append({
-                    "date": date_str,
-                    "total_market_value": total_mv,
-                    "pe_ratio": pe_ratio
-                })
+            
+            # 科创板的返回字段与其他市场不同，需要特殊处理
+            if market == "科创版":
+                # 科创板返回字段为：日期、总市值、市盈率
+                for _, row in pe_data.iterrows():
+                    date_str = row.get('日期', '')
+                    total_mv = float(row.get('总市值', 0))
+                    pe_ratio = float(row.get('市盈率', 0))
+                    
+                    result.append({
+                        "date": date_str,
+                        "total_market_value": total_mv,
+                        "pe_ratio": pe_ratio
+                    })
+            else:
+                # 上证、深证、创业板返回字段为：日期、指数、平均市盈率
+                for _, row in pe_data.iterrows():
+                    date_str = row.get('日期', '')
+                    index_value = float(row.get('指数', 0))
+                    pe_ratio = float(row.get('平均市盈率', 0))
+                    
+                    result.append({
+                        "date": date_str,
+                        "total_market_value": index_value,  # 使用指数值作为总市值
+                        "pe_ratio": pe_ratio
+                    })
             
             return result
         except Exception as e:

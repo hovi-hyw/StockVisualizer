@@ -96,9 +96,23 @@ export const getAllMarketKLineData = async () => {
     );
     const responses = await Promise.all(promises);
     
-    // 将结果组织成对象形式
+    // 将结果组织成对象形式，并处理数据格式
     markets.forEach((market, index) => {
-      results[market] = responses[index];
+      // 确保响应数据存在且包含data字段
+      if (responses[index] && responses[index].data) {
+        // 提取K线数据并格式化为与市盈率数据相同的格式
+        const klineData = responses[index].data.map(item => ({
+          date: item.date,  // 确保日期格式一致
+          close: item.close,
+          open: item.open,
+          high: item.high,
+          low: item.low,
+          volume: item.volume
+        }));
+        results[market] = klineData;
+      } else {
+        results[market] = [];
+      }
     });
     
     return results;
@@ -106,4 +120,50 @@ export const getAllMarketKLineData = async () => {
     console.error('获取市场K线数据失败:', error);
     throw error;
   }
+};
+
+/**
+ * 处理市盈率和K线数据，确保日期对齐
+ * 特别处理科创板的数据，因为科创板的日期是连续的，而其他市场是按月返回的
+ * @param {Object} peRatioData 市盈率数据
+ * @param {Object} klineData K线数据
+ * @returns {Object} 处理后的市盈率数据
+ */
+export const processMarketData = (peRatioData, klineData) => {
+  const markets = ["上证", "深证", "创业板", "科创版"];
+  const processedData = {};
+  
+  markets.forEach(market => {
+    const marketPEData = peRatioData[market] || [];
+    const marketKlineData = klineData[market] || [];
+    
+    // 如果是科创板，需要特殊处理
+    if (market === "科创版" && marketPEData.length > 0 && marketKlineData.length > 0) {
+      // 创建K线数据日期到收盘价的映射
+      const klineDateMap = {};
+      marketKlineData.forEach(item => {
+        klineDateMap[item.date] = item.close;
+      });
+      
+      // 处理科创板数据，确保每个市盈率数据点都有对应的K线数据
+      const processedPEData = marketPEData.map(item => {
+        // 如果当前日期有K线数据，则使用K线数据的收盘价
+        if (klineDateMap[item.date]) {
+          return {
+            ...item,
+            // 使用K线数据的收盘价作为指数值
+            index_value: klineDateMap[item.date]
+          };
+        }
+        return item;
+      });
+      
+      processedData[market] = processedPEData;
+    } else {
+      // 其他市场直接使用原始数据
+      processedData[market] = marketPEData;
+    }
+  });
+  
+  return processedData;
 };
