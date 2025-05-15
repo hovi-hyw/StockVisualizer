@@ -4,11 +4,12 @@
  * 展示概念板块及其相关个股
  * Authors: hovi.hyw & AI
  * Date: 2025-03-26
+ * 更新: 2025-04-05 - 添加刷新按钮，优化刷新逻辑
  */
 
 import React from 'react';
 import { Card, List, Tag, Typography, Space, Spin, Row, Col, Tooltip, Button } from 'antd';
-import { RiseOutlined, FallOutlined, PlusOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { RiseOutlined, FallOutlined, PlusOutlined, QuestionCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { formatLargeNumber } from '../../utils/formatters';
 
@@ -27,6 +28,7 @@ const { Title, Text } = Typography;
  * @param {string} props.sortField 当前排序字段
  * @param {string} props.sortOrder 当前排序顺序
  * @param {Function} props.onAddToFavorites 添加到自选股处理函数
+ * @param {Function} props.onRefresh 刷新数据处理函数
  * @returns {JSX.Element} 概念板块组件
  */
 const ConceptSectors = ({
@@ -39,7 +41,8 @@ const ConceptSectors = ({
   onSortChange,
   sortField,
   sortOrder,
-  onAddToFavorites
+  onAddToFavorites,
+  onRefresh
 }) => {
   // 根据涨跌幅返回不同颜色
   const getChangeColor = (change) => {
@@ -65,17 +68,30 @@ const ConceptSectors = ({
       <Col xs={24} sm={8} md={6}>
         <Card 
           title={
-            <Space>
-              <Title level={4}><RiseOutlined style={{ color: '#52c41a' }} /> 概念板块</Title>
-              <Tooltip 
-                title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0, color: '#fff' }}>基于该概念板块的讨论度、相关股票表现和资金流入综合计算，数值越高表示关注度越高。</Typography.Paragraph>}
-                placement="topRight"
-                overlayStyle={{ maxWidth: '300px' }}
-                overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}
-              >
-                <QuestionCircleOutlined className="info-icon" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <Title level={4}><RiseOutlined style={{ color: '#52c41a' }} /> 概念板块</Title>
+                <Tooltip 
+                  title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0, color: '#fff' }}>基于该概念板块的讨论度、相关股票表现和资金流入综合计算，数值越高表示关注度越高。</Typography.Paragraph>}
+                  placement="topRight"
+                  overlayStyle={{ maxWidth: '300px' }}
+                  overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}
+                >
+                  <QuestionCircleOutlined className="info-icon" />
+                </Tooltip>
+              </Space>
+              <Tooltip title="主动刷新，否则每5分钟刷新一次">
+                <Button 
+                  icon={<ReloadOutlined />} 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation(); // 阻止事件冒泡
+                    onRefresh();
+                  }}
+                  loading={loading}
+                />
               </Tooltip>
-            </Space>
+            </div>
           }
           className="hotspot-card"
           bordered={false}
@@ -120,9 +136,11 @@ const ConceptSectors = ({
       <Col xs={24} sm={16} md={18}>
         <Card 
           title={
-            <Space>
-              <Title level={4}>{selectedConcept ? `${selectedConcept.name}相关个股` : '概念相关个股'}</Title>
-            </Space>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Space>
+                <Title level={4}>{selectedConcept ? `${selectedConcept.name}相关个股` : '概念相关个股'}</Title>
+              </Space>
+            </div>
           }
           className="hotspot-card"
           bordered={false}

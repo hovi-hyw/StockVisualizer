@@ -6,8 +6,8 @@
  * Date: 2025-03-26
  */
 
-import { FallOutlined, FundOutlined, QuestionCircleOutlined, RiseOutlined } from '@ant-design/icons';
-import { Card, List, Select, Space, Spin, Table, Tag, Tooltip, Typography } from 'antd';
+import { FallOutlined, FundOutlined, QuestionCircleOutlined, RiseOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, List, Select, Space, Spin, Table, Tag, Tooltip, Typography, Button } from 'antd';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getValueETFs } from '../../services/fundService';
@@ -42,18 +42,42 @@ const ValueETFList = () => {
   // 状态定义 - 排序相关
   const [sortBy, setSortBy] = useState('change');
   const [sortOrder, setSortOrder] = useState('desc');
+  // 原始ETF数据
+  const [originalEtfList, setOriginalEtfList] = useState([]);
+
+  // 前端排序函数
+  const sortEtfData = (data, field, order) => {
+    if (!data || !Array.isArray(data) || data.length === 0) return [];
+    
+    return [...data].sort((a, b) => {
+      let aValue = a[field];
+      let bValue = b[field];
+      
+      // 处理涨跌幅的特殊情况
+      if (field === 'change') {
+        aValue = parseFloat(aValue.replace('%', ''));
+        bValue = parseFloat(bValue.replace('%', ''));
+      }
+      
+      // 确保值是数字
+      aValue = isNaN(aValue) ? 0 : aValue;
+      bValue = isNaN(bValue) ? 0 : bValue;
+      
+      return order === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+  };
 
   // 获取价值ETF数据
   useEffect(() => {
     const fetchValueETFs = async () => {
       try {
         setLoading(true);
-        const data = await getValueETFs({
-          sort_by: sortBy,
-          sort_order: sortOrder
-        });
+        const data = await getValueETFs();
         if (data && Array.isArray(data)) {
-          setEtfList(data);
+          setOriginalEtfList(data);
+          // 应用初始排序
+          const sortedData = sortEtfData(data, sortBy, sortOrder);
+          setEtfList(sortedData);
         }
         setError(null);
       } catch (err) {
@@ -68,17 +92,20 @@ const ValueETFList = () => {
     // 首次加载数据
     fetchValueETFs();
 
-    // 设置定时刷新（每3分钟刷新一次）
+    // 设置定时刷新（每5分钟刷新一次）
     const intervalId = setInterval(() => {
-      // 只在交易时间内更新数据
-      if (isTradeTime()) {
-        fetchValueETFs();
-      }
-    }, 3 * 60 * 1000);
+      fetchValueETFs();
+    }, 5 * 60 * 1000);
 
     // 组件卸载时清除定时器
     return () => clearInterval(intervalId);
-  }, [sortBy, sortOrder]);
+  }, []);
+  
+  // 当排序条件变化时，在前端进行排序
+  useEffect(() => {
+    const sortedData = sortEtfData(originalEtfList, sortBy, sortOrder);
+    setEtfList(sortedData);
+  }, [sortBy, sortOrder, originalEtfList]);
 
   // 根据涨跌幅返回不同颜色
   const getChangeColor = (change) => {
@@ -109,18 +136,14 @@ const ValueETFList = () => {
       title: '价格',
       dataIndex: 'price',
       key: 'price',
-      sorter: (a, b) => a.price - b.price,
+      sorter: true,
       render: (text) => text ? text.toFixed(2) : '-',
     },
     {
       title: '涨跌幅',
       dataIndex: 'change',
       key: 'change',
-      sorter: (a, b) => {
-        const aValue = parseFloat(a.change.replace('%', ''));
-        const bValue = parseFloat(b.change.replace('%', ''));
-        return aValue - bValue;
-      },
+      sorter: true,
       render: (text) => {
         const value = parseFloat(text.replace('%', ''));
         const color = value >= 0 ? '#cf1322' : '#3f8600';
@@ -130,20 +153,50 @@ const ValueETFList = () => {
     },
   ];
 
+  // 刷新数据函数
+  const handleRefresh = async () => {
+    try {
+      setLoading(true);
+      const data = await getValueETFs();
+      if (data && Array.isArray(data)) {
+        setOriginalEtfList(data);
+        // 应用当前排序
+        const sortedData = sortEtfData(data, sortBy, sortOrder);
+        setEtfList(sortedData);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('刷新价值ETF数据失败:', err);
+      setError('刷新价值ETF数据失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Card
       title={
-        <Space>
-          <Title level={4}><FundOutlined /> 价值ETF</Title>
-          <Tooltip
-            title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0, color: '#fff' }}>价值型ETF基金通常投资于被认为价值被低估的股票，这些股票的市盈率、市净率等估值指标相对较低。</Typography.Paragraph>}
-            placement="topRight"
-            overlayStyle={{ maxWidth: '300px' }}
-            overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}
-          >
-            <QuestionCircleOutlined className="info-icon" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space>
+            <Title level={4}><FundOutlined /> 价值ETF</Title>
+            <Tooltip
+              title={<Typography.Paragraph style={{ whiteSpace: 'pre-line', margin: 0, color: '#fff' }}>价值型ETF基金通常投资于被认为价值被低估的股票，这些股票的市盈率、市净率等估值指标相对较低。</Typography.Paragraph>}
+              placement="topRight"
+              overlayStyle={{ maxWidth: '300px' }}
+              overlayInnerStyle={{ backgroundColor: '#000', color: '#fff' }}
+            >
+              <QuestionCircleOutlined className="info-icon" />
+            </Tooltip>
+          </Space>
+          <Tooltip title="主动刷新，否则每5分钟刷新一次">
+            <Button 
+              icon={<ReloadOutlined />} 
+              size="small" 
+              onClick={handleRefresh}
+              loading={loading}
+            />
           </Tooltip>
-        </Space>
+        </div>
       }
       className="etf-card"
       bordered={false}
@@ -166,6 +219,7 @@ const ValueETFList = () => {
             if (sorter.field) {
               setSortBy(sorter.field);
               setSortOrder(sorter.order === 'ascend' ? 'asc' : 'desc');
+              // 注意：这里不再发送API请求，而是在useEffect中监听sortBy和sortOrder的变化来进行前端排序
             }
           }}
         />

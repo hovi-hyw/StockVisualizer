@@ -74,72 +74,114 @@ const HomePage = () => {
   };
 
   
+  // 获取热门行业和概念板块数据函数
+  const fetchHotspotData = async () => {
+    try {
+      setHotspotLoading(true);
+      // 并行获取热门行业和概念板块数据
+      const [industriesData, conceptsData] = await Promise.all([
+        getHotIndustries(),
+        getConceptSectors()
+      ]);
+      
+      setHotIndustries(industriesData);
+      setHotConcepts(conceptsData);
+      
+      // 默认选中第一个行业和概念
+      if (industriesData.length > 0) {
+        setSelectedIndustry(industriesData[0]);
+        // 使用akshare的stock_board_concept_cons_em方法获取该行业的个股数据
+        try {
+          const data = await getIndustryStocks(industriesData[0].name);
+          // 根据当前排序字段和顺序排序数据
+          const sortedData = sortStockData(data, industrySortField, industrySortOrder);
+          setIndustryStocks(sortedData);
+        } catch (error) {
+          console.error('获取行业个股数据失败:', error);
+          setIndustryStocks([]);
+        }
+      }
+      
+      if (conceptsData.length > 0) {
+        setSelectedConcept(conceptsData[0]);
+        // 使用akshare的stock_board_concept_cons_em方法获取该概念的个股数据
+        try {
+          const data = await getConceptStocks(conceptsData[0].name);
+          // 根据当前排序字段和顺序排序数据
+          const sortedData = sortStockData(data, conceptSortField, conceptSortOrder);
+          setConceptStocks(sortedData);
+        } catch (error) {
+          console.error('获取概念个股数据失败:', error);
+          setConceptStocks([]);
+        }
+      }
+      
+      setHotspotError(null);
+    } catch (err) {
+      console.error('获取市场热点数据失败:', err);
+      setHotspotError('获取市场热点数据失败，请稍后再试');
+    } finally {
+      setHotspotLoading(false);
+    }
+  };
+
+  // 刷新热门行业数据
+  const refreshIndustryData = async () => {
+    try {
+      setHotspotLoading(true);
+      const industriesData = await getHotIndustries();
+      setHotIndustries(industriesData);
+      
+      if (selectedIndustry) {
+        const data = await getIndustryStocks(selectedIndustry.name);
+        const sortedData = sortStockData(data, industrySortField, industrySortOrder);
+        setIndustryStocks(sortedData);
+      }
+      
+      setHotspotError(null);
+    } catch (err) {
+      console.error('刷新热门行业数据失败:', err);
+      setHotspotError('刷新热门行业数据失败，请稍后再试');
+    } finally {
+      setHotspotLoading(false);
+    }
+  };
+
+  // 刷新概念板块数据
+  const refreshConceptData = async () => {
+    try {
+      setHotspotLoading(true);
+      const conceptsData = await getConceptSectors();
+      setHotConcepts(conceptsData);
+      
+      if (selectedConcept) {
+        const data = await getConceptStocks(selectedConcept.name);
+        const sortedData = sortStockData(data, conceptSortField, conceptSortOrder);
+        setConceptStocks(sortedData);
+      }
+      
+      setHotspotError(null);
+    } catch (err) {
+      console.error('刷新概念板块数据失败:', err);
+      setHotspotError('刷新概念板块数据失败，请稍后再试');
+    } finally {
+      setHotspotLoading(false);
+    }
+  };
+
   // 获取热门行业和概念板块数据
   useEffect(() => {
-    const fetchHotspotData = async () => {
-      try {
-        setHotspotLoading(true);
-        // 并行获取热门行业和概念板块数据
-        const [industriesData, conceptsData] = await Promise.all([
-          getHotIndustries(),
-          getConceptSectors()
-        ]);
-        
-        setHotIndustries(industriesData);
-        setHotConcepts(conceptsData);
-        
-        // 默认选中第一个行业和概念
-        if (industriesData.length > 0) {
-          setSelectedIndustry(industriesData[0]);
-          // 使用akshare的stock_board_concept_cons_em方法获取该行业的个股数据
-          try {
-            const data = await getIndustryStocks(industriesData[0].name);
-            // 根据当前排序字段和顺序排序数据
-            const sortedData = sortStockData(data, industrySortField, industrySortOrder);
-            setIndustryStocks(sortedData);
-          } catch (error) {
-            console.error('获取行业个股数据失败:', error);
-            setIndustryStocks([]);
-          }
-        }
-        
-        if (conceptsData.length > 0) {
-          setSelectedConcept(conceptsData[0]);
-          // 使用akshare的stock_board_concept_cons_em方法获取该概念的个股数据
-          try {
-            const data = await getConceptStocks(conceptsData[0].name);
-            // 根据当前排序字段和顺序排序数据
-            const sortedData = sortStockData(data, conceptSortField, conceptSortOrder);
-            setConceptStocks(sortedData);
-          } catch (error) {
-            console.error('获取概念个股数据失败:', error);
-            setConceptStocks([]);
-          }
-        }
-        
-        setHotspotError(null);
-      } catch (err) {
-        console.error('获取市场热点数据失败:', err);
-        setHotspotError('获取市场热点数据失败，请稍后再试');
-      } finally {
-        setHotspotLoading(false);
-      }
-    };
-
     // 首次加载数据
     fetchHotspotData();
 
     // 设置定时刷新（每5分钟刷新一次）
     const intervalId = setInterval(() => {
-      // 只在交易时间内更新数据
-      if (isTradeTime()) {
-        fetchHotspotData();
-      }
+      fetchHotspotData();
     }, 5 * 60 * 1000);
     
     // 组件卸载时清除定时器
     return () => clearInterval(intervalId);
-  }, [industrySortField, industrySortOrder, conceptSortField, conceptSortOrder]);
+  }, []);
 
   // 处理行业点击事件
   const handleIndustryClick = async (industry) => {
@@ -324,6 +366,7 @@ const HomePage = () => {
                   onSortChange={handleIndustrySortChange}
                   sortField={industrySortField}
                   sortOrder={industrySortOrder}
+                  onRefresh={refreshIndustryData}
                   onAddToFavorites={(stock) => {
                     const savedFavorites = localStorage.getItem('favoriteStocks');
                     const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
@@ -356,6 +399,7 @@ const HomePage = () => {
                   onSortChange={handleConceptSortChange}
                   sortField={conceptSortField}
                   sortOrder={conceptSortOrder}
+                  onRefresh={refreshConceptData}
                   onAddToFavorites={(stock) => {
                     const savedFavorites = localStorage.getItem('favoriteStocks');
                     const favorites = savedFavorites ? JSON.parse(savedFavorites) : [];
