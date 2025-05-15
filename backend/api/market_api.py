@@ -208,14 +208,20 @@ async def get_industry_stocks(industry_name: str):
         result = []
         for _, row in stocks_data.iterrows():
             change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
+            amplitude = float(row.get('振幅', 0).strip('%')) if isinstance(row.get('振幅'), str) else float(row.get('振幅', 0))
+            turnover_rate = float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
             
             result.append({
                 "name": row.get('名称', ''),
                 "code": row.get('代码', ''),
                 "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
+                "change_percent": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
                 "price": float(row.get('最新价', 0)),
                 "volume": f"{float(row.get('成交量', 0))/10000:.1f}万",
-                "turnover": f"{float(row.get('成交额', 0))/10000:.1f}万"
+                "amount": f"{float(row.get('成交额', 0))/10000:.1f}万",
+                "turnover": f"{float(row.get('成交额', 0))/10000:.1f}万",
+                "amplitude": f"{amplitude:.2f}%",
+                "turnover_rate": f"{turnover_rate:.2f}%"
             })
         
         return result
@@ -373,19 +379,27 @@ async def get_concept_stocks(concept_name: str):
         # 使用akshare获取概念板块成分股数据
         stocks_data = ak.stock_board_concept_cons_em(symbol=concept_name)
         
+        # 按照涨跌幅排序
+        stocks_data = stocks_data.sort_values(by='涨跌幅', ascending=False)
+        
         result = []
         for _, row in stocks_data.iterrows():
             # 提取需要的数据字段
             change_percent = float(row.get('涨跌幅', 0).strip('%')) if isinstance(row.get('涨跌幅'), str) else float(row.get('涨跌幅', 0))
             amplitude = float(row.get('振幅', 0).strip('%')) if isinstance(row.get('振幅'), str) else float(row.get('振幅', 0))
+            turnover_rate = float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
             
             result.append({
-                "code": row.get('代码', ''),
                 "name": row.get('名称', ''),
-                "change_percent": change_percent,
-                "amplitude": amplitude,
-                "amount": float(row.get('成交额', 0)),
-                "turnover_rate": float(row.get('换手率', 0).strip('%')) if isinstance(row.get('换手率'), str) else float(row.get('换手率', 0))
+                "code": row.get('代码', ''),
+                "change": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
+                "change_percent": f"+{change_percent:.2f}%" if change_percent > 0 else f"{change_percent:.2f}%",
+                "price": float(row.get('最新价', 0)),
+                "volume": f"{float(row.get('成交量', 0))/10000:.1f}万",
+                "amount": f"{float(row.get('成交额', 0))/10000:.1f}万",
+                "turnover": f"{float(row.get('成交额', 0))/10000:.1f}万",
+                "amplitude": f"{amplitude:.2f}%",
+                "turnover_rate": f"{turnover_rate:.2f}%"
             })
         
         return result

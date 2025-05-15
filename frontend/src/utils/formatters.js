@@ -66,10 +66,10 @@ export const formatLargeNumber = (value) => {
 
   const num = parseFloat(value);
 
-  if (num >= 100000000) {
-    return `${(num / 100000000).toFixed(2)}亿`;
-  } else if (num >= 10000) {
-    return `${(num / 10000).toFixed(2)}万`;
+  if (num >= 10000) {
+    return `${(num / 10000).toFixed(2)}亿`;
+  } else if (num >= 100) {
+    return `${(num / 100).toFixed(2)}百万`;
   } else {
     return num.toString();
   }

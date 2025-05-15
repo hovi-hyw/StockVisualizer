@@ -240,16 +240,16 @@ const HotIndustries = ({
                         <Text type="secondary">{stock.code}</Text>
                       </td>
                       <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                        <Text style={{ color: getChangeColor(stock.change_percent) }}>{stock.change_percent}%</Text>
+                        <Text style={{ color: getChangeColor(stock.change_percent) }}>{stock.change_percent}</Text>
                       </td>
                       <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                        <Text type="secondary">{stock.amplitude}%</Text>
+                        <Text type="secondary">{stock.amplitude}</Text>
                       </td>
                       <td style={{ padding: '8px 4px', textAlign: 'right' }}>
                         <Text type="secondary">{formatLargeNumber(stock.amount)}</Text>
                       </td>
                       <td style={{ padding: '8px 4px', textAlign: 'right' }}>
-                        <Text type="secondary">{stock.turnover_rate}%</Text>
+                        <Text type="secondary">{stock.turnover_rate}</Text>
                       </td>
                     </tr>
                   ))}
