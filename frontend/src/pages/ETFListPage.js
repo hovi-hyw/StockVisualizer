@@ -13,6 +13,7 @@ import { Table, Input, Button, Space, Typography, Spin, Alert, Tabs } from 'antd
 import { SearchOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { getETFList, getHighVolumeETFList } from '../services/etfService';
+import { formatLargeNumber } from '../utils/formatters';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -269,10 +270,10 @@ const ETFListPage = () => {
                                     sorter: (a, b) => a.change_rate - b.change_rate
                                 },
                                 {
-                                    title: '平均成交额(亿)',
+                                    title: '平均成交额(人民币)',
                                     dataIndex: 'avg_amount',
                                     key: 'avg_amount',
-                                    render: (text) => text ? parseFloat(text).toFixed(2) : '-',
+                                    render: (text) => text ? formatLargeNumber(text) : '-',
                                     sorter: (a, b) => a.avg_amount - b.avg_amount,
                                     defaultSortOrder: 'descend'
                                 },
