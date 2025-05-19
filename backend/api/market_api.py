@@ -8,11 +8,15 @@ Date: 2025-03-12
 更新: 2025-03-28 - 添加市盈率和K线数据API
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 import akshare as ak
 import pandas as pd
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+
+from backend.database.connection import get_db
 
 router = APIRouter(prefix="/market", tags=["market"])
 
@@ -185,6 +189,112 @@ async def get_market_news():
         print(f"获取市场资讯数据失败: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to fetch market news: {str(e)}")
+
+
+@router.get("/distribution/{symbol}", response_model=List[Dict[str, Any]])
+async def get_market_distribution(symbol: str, db: Session = Depends(get_db)):
+    """
+    获取股票市场分布数据。
+    根据市场代码返回对应的市场分布数据。
+
+    Args:
+        symbol (str): 市场代码 (北证板:899050, 科创板:000698, 创业板:399006, A股所有个股:000001)
+        db (Session): 数据库会话
+
+    Returns:
+        List[Dict[str, Any]]: 市场分布数据列表
+    """
+    try:
+        # 从stock_market_summary表获取市场分布数据
+        query = """
+        SELECT 
+            date,
+            count_lt_neg8pct,
+            count_neg8pct_to_neg5pct,
+            count_neg5pct_to_neg2pct,
+            count_neg2pct_to_2pct,
+            count_2pct_to_5pct,
+            count_5pct_to_8pct,
+            count_gt_8pct
+        FROM stock_market_summary
+        WHERE symbol = :symbol
+        ORDER BY date DESC
+        LIMIT 1
+        """
+        
+        result = db.execute(text(query), {"symbol": symbol}).fetchone()
+        
+        if not result:
+            # 如果没有找到数据，尝试使用akshare获取实时数据
+            try:
+                # 根据不同的市场代码获取对应的数据
+                if symbol == '000001':  # A股所有个股
+                    market_data = ak.stock_zh_a_spot_em()
+                elif symbol == '399006':  # 创业板
+                    market_data = ak.stock_cy_a_spot_em()
+                elif symbol == '000688':  # 科创板
+                    market_data = ak.stock_kc_a_spot_em()
+                elif symbol == '899050':  # 北证板
+                    market_data = ak.stock_bj_a_spot_em()
+                else:
+                    # 默认获取A股数据
+                    market_data = ak.stock_zh_a_spot_em()
+                
+                # 计算各个涨跌幅区间的股票数量
+                total_stocks = len(market_data)
+                
+                # 计算各个涨跌幅区间的股票数量
+                lt_neg8pct = len(market_data[market_data['涨跌幅'] < -8])
+                neg8pct_to_neg5pct = len(market_data[(market_data['涨跌幅'] >= -8) & (market_data['涨跌幅'] < -5)])
+                neg5pct_to_neg2pct = len(market_data[(market_data['涨跌幅'] >= -5) & (market_data['涨跌幅'] < -2)])
+                neg2pct_to_2pct = len(market_data[(market_data['涨跌幅'] >= -2) & (market_data['涨跌幅'] <= 2)])
+                pct2_to_5pct = len(market_data[(market_data['涨跌幅'] > 2) & (market_data['涨跌幅'] <= 5)])
+                pct5_to_8pct = len(market_data[(market_data['涨跌幅'] > 5) & (market_data['涨跌幅'] <= 8)])
+                gt_8pct = len(market_data[market_data['涨跌幅'] > 8])
+                
+                # 计算各个区间的占比
+                lt_neg8pct_pct = lt_neg8pct / total_stocks if total_stocks > 0 else 0
+                neg8pct_to_neg5pct_pct = neg8pct_to_neg5pct / total_stocks if total_stocks > 0 else 0
+                neg5pct_to_neg2pct_pct = neg5pct_to_neg2pct / total_stocks if total_stocks > 0 else 0
+                neg2pct_to_2pct_pct = neg2pct_to_2pct / total_stocks if total_stocks > 0 else 0
+                pct2_to_5pct_pct = pct2_to_5pct / total_stocks if total_stocks > 0 else 0
+                pct5_to_8pct_pct = pct5_to_8pct / total_stocks if total_stocks > 0 else 0
+                gt_8pct_pct = gt_8pct / total_stocks if total_stocks > 0 else 0
+                
+                today = datetime.now().strftime('%Y-%m-%d')
+                
+                # 返回符合前端期望格式的数据
+                return [{
+                    'date': today,
+                    'count_lt_neg8pct': lt_neg8pct_pct,
+                    'count_neg8pct_to_neg5pct': neg8pct_to_neg5pct_pct,
+                    'count_neg5pct_to_neg2pct': neg5pct_to_neg2pct_pct,
+                    'count_neg2pct_to_2pct': neg2pct_to_2pct_pct,
+                    'count_2pct_to_5pct': pct2_to_5pct_pct,
+                    'count_5pct_to_8pct': pct5_to_8pct_pct,
+                    'count_gt_8pct': gt_8pct_pct
+                }]
+            except Exception as e:
+                print(f"获取实时市场分布数据失败: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Failed to fetch real-time market distribution data: {str(e)}")
+        
+        # 转换查询结果为字典列表
+        return [{
+            'date': result.date.strftime('%Y-%m-%d') if result.date else None,
+            'count_lt_neg8pct': float(result.count_lt_neg8pct) if result.count_lt_neg8pct is not None else 0,
+            'count_neg8pct_to_neg5pct': float(result.count_neg8pct_to_neg5pct) if result.count_neg8pct_to_neg5pct is not None else 0,
+            'count_neg5pct_to_neg2pct': float(result.count_neg5pct_to_neg2pct) if result.count_neg5pct_to_neg2pct is not None else 0,
+            'count_neg2pct_to_2pct': float(result.count_neg2pct_to_2pct) if result.count_neg2pct_to_2pct is not None else 0,
+            'count_2pct_to_5pct': float(result.count_2pct_to_5pct) if result.count_2pct_to_5pct is not None else 0,
+            'count_5pct_to_8pct': float(result.count_5pct_to_8pct) if result.count_5pct_to_8pct is not None else 0,
+            'count_gt_8pct': float(result.count_gt_8pct) if result.count_gt_8pct is not None else 0
+        }]
+    except Exception as e:
+        # 打印详细错误信息以便调试
+        import traceback
+        print(f"获取市场分布数据失败: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to fetch market distribution data: {str(e)}")
 
 @router.get("/industry-stocks/{industry_name}", response_model=List[Dict[str, Any]])
 async def get_industry_stocks(industry_name: str):
