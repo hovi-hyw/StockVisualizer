@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Space, Dropdown, Input, List, Typography, Modal, message, Tooltip } from 'antd';
-import { HomeOutlined, LineChartOutlined, FundOutlined, StarOutlined, PlusOutlined, MinusOutlined, SearchOutlined, BulbOutlined, BulbFilled, ExportOutlined } from '@ant-design/icons';
+import { HomeOutlined, LineChartOutlined, FundOutlined, StarOutlined, PlusOutlined, MinusOutlined, SearchOutlined, BulbOutlined, BulbFilled, ExportOutlined, BarChartOutlined } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 import { getStockList } from '../../services/stockService';
 import { getIndexList } from '../../services/indexService';
@@ -345,41 +345,65 @@ const NavButtons = () => {
       boxShadow: currentTheme === 'dark' ? '0 2px 8px rgba(255, 255, 255, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.15)'
     }}>
       <Space>
+        {/* 主页按钮 */}
+      <Tooltip title="主页">
         <Button 
-          type={currentPath === '/' ? 'primary' : 'default'}
-          icon={<HomeOutlined />}
-          size="middle"
-        >
-          <Link to="/">主页</Link>
-        </Button>
+          type={currentPath === '/' ? 'primary' : 'default'} 
+          icon={<HomeOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/'}
+        />
+      </Tooltip>
+      
+      {/* 股票按钮 */}
+      <Tooltip title="股票">
         <Button 
-          type={currentPath === '/stocks' ? 'primary' : 'default'}
-          icon={<LineChartOutlined />}
-          size="middle"
-        >
-          <Link to="/stocks">股票</Link>
-        </Button>
+          type={currentPath === '/stocks' ? 'primary' : 'default'} 
+          icon={<LineChartOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/stocks'}
+        />
+      </Tooltip>
+      
+      {/* 指数按钮 */}
+      <Tooltip title="指数">
         <Button 
-          type={currentPath === '/indices' ? 'primary' : 'default'}
-          icon={<FundOutlined />}
-          size="middle"
-        >
-          <Link to="/indices">指数</Link>
-        </Button>
+          type={currentPath === '/indices' ? 'primary' : 'default'} 
+          icon={<FundOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/indices'}
+        />
+      </Tooltip>
+      
+      {/* 市场分布按钮 */}
+      <Tooltip title="市场分布">
         <Button 
-          type={currentPath === '/etfs' ? 'primary' : 'default'}
-          icon={<FundOutlined />}
-          size="middle"
-        >
-          <Link to="/etfs">ETF</Link>
-        </Button>
+          type={currentPath === '/market-distribution' ? 'primary' : 'default'} 
+          icon={<BarChartOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/market-distribution'}
+        />
+      </Tooltip>
+      
+      {/* ETF按钮 */}
+      <Tooltip title="ETF">
         <Button 
-          type={currentPath === '/market-pe-ratio' ? 'primary' : 'default'}
-          icon={<LineChartOutlined />}
-          size="middle"
-        >
-          <Link to="/market-pe-ratio">市盈率走势</Link>
-        </Button>
+          type={currentPath === '/etfs' ? 'primary' : 'default'} 
+          icon={<FundOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/etfs'}
+        />
+      </Tooltip>
+      
+      {/* 市盈率走势按钮 */}
+      <Tooltip title="市盈率走势">
+        <Button 
+          type={currentPath === '/market-pe-ratio' ? 'primary' : 'default'} 
+          icon={<LineChartOutlined />} 
+          shape="circle"
+          onClick={() => window.location.href = '/market-pe-ratio'}
+        />
+      </Tooltip>
         <Dropdown
           open={favoriteVisible}
           onOpenChange={handleFavoriteVisibleChange}
