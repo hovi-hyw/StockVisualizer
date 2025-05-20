@@ -46,7 +46,29 @@ docker-compose -f deployment/docker-compose.dev.yml up
 
 3. **环境变量**：
    - 开发环境使用项目根目录下的`.env`文件
-   - 确保该文件包含所有必要的环境变量
+   - 确保该文件包含所有必要的环境变量，包括：
+     ```
+     # 数据库配置
+     DATABASE_URL=postgresql://stock_user:password@localhost:5432/stock_visualizer
+     
+     # 服务器配置
+     HOST=0.0.0.0
+     PORT=8000
+     DEBUG=True
+     
+     # 数据源配置
+     # 股票数据源
+     STOCK_API_URL=https://api.example.com/stocks
+     STOCK_API_KEY=your_stock_api_key
+     
+     # ETF数据源
+     ETF_API_URL=https://api.example.com/etfs
+     ETF_API_KEY=your_etf_api_key
+     
+     # 基金数据源
+     FUND_API_URL=https://api.example.com/funds
+     FUND_API_KEY=your_fund_api_key
+     ```
 
 4. **网络问题**：
    - 如果前端无法连接后端API，检查`REACT_APP_API_URL`环境变量设置

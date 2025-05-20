@@ -212,6 +212,193 @@ GET /stocks/{symbol}/real-change
 }
 ```
 
+### ETF数据
+
+#### 获取ETF列表
+```http
+GET /etfs
+```
+返回可用的ETF列表，支持分页和搜索。
+
+**参数说明**
+- `page`: 页码，默认为1
+- `page_size`: 每页数量，默认为20，最大为100
+- `search`: 搜索关键字，可搜索ETF代码或名称
+
+**响应示例**
+```json
+{
+    "items": [
+        {
+            "symbol": "510050",
+            "name": "50ETF",
+            "current_price": 3.127,
+            "change_percent": 0.45,
+            "volume": 98765432,
+            "turnover": 308642975
+        }
+    ],
+    "total": 568,
+    "page": 1,
+    "page_size": 20,
+    "pages": 29
+}
+```
+
+#### 获取ETF详情
+```http
+GET /etfs/{symbol}
+```
+返回特定ETF的详细信息。
+
+**参数说明**
+- `symbol`: ETF代码（例如：510050）
+
+**响应示例**
+```json
+{
+    "symbol": "510050",
+    "name": "50ETF",
+    "current_price": 3.127,
+    "change": 0.014,
+    "change_percent": 0.45,
+    "open": 3.115,
+    "high": 3.135,
+    "low": 3.110,
+    "volume": 98765432,
+    "turnover": 308642975,
+    "net_value": 3.125,
+    "premium_rate": 0.06,
+    "update_time": "2024-03-12 15:00:00"
+}
+```
+
+#### 获取ETF K线数据
+```http
+GET /etfs/{symbol}/kline
+```
+返回特定ETF的K线数据，用于绘制K线图。
+
+**参数说明**
+- `symbol`: ETF代码（例如：510050）
+- `start_date`: 开始日期（YYYY-MM-DD），可选
+- `end_date`: 结束日期（YYYY-MM-DD），可选
+
+**响应示例**
+```json
+{
+    "symbol": "510050",
+    "name": "50ETF",
+    "data": [
+        {
+            "date": "2024-01-01",
+            "open": 3.115,
+            "high": 3.135,
+            "low": 3.110,
+            "close": 3.127,
+            "volume": 98765432,
+            "turnover": 308642975
+        }
+    ]
+}
+```
+
+### 基金数据
+
+#### 获取基金列表
+```http
+GET /funds
+```
+返回可用的基金列表，支持分页和搜索。
+
+**参数说明**
+- `page`: 页码，默认为1
+- `page_size`: 每页数量，默认为20，最大为100
+- `search`: 搜索关键字，可搜索基金代码或名称
+- `type`: 基金类型，可选（例如：股票型、债券型、混合型、指数型）
+
+**响应示例**
+```json
+{
+    "items": [
+        {
+            "symbol": "000001",
+            "name": "华夏成长混合",
+            "type": "混合型",
+            "net_value": 1.2345,
+            "daily_growth": 0.56,
+            "weekly_growth": 1.23,
+            "monthly_growth": 2.34,
+            "yearly_growth": 15.67
+        }
+    ],
+    "total": 8765,
+    "page": 1,
+    "page_size": 20,
+    "pages": 439
+}
+```
+
+#### 获取基金详情
+```http
+GET /funds/{symbol}
+```
+返回特定基金的详细信息。
+
+**参数说明**
+- `symbol`: 基金代码（例如：000001）
+
+**响应示例**
+```json
+{
+    "symbol": "000001",
+    "name": "华夏成长混合",
+    "type": "混合型",
+    "net_value": 1.2345,
+    "accumulative_value": 3.4567,
+    "daily_growth": 0.56,
+    "weekly_growth": 1.23,
+    "monthly_growth": 2.34,
+    "yearly_growth": 15.67,
+    "three_year_growth": 45.67,
+    "since_inception_growth": 134.56,
+    "inception_date": "2001-04-16",
+    "fund_size": 56.78,
+    "fund_manager": "王小明",
+    "management_fee": 1.5,
+    "custodian_fee": 0.25,
+    "update_time": "2024-03-12 15:00:00"
+}
+```
+
+#### 获取基金净值历史数据
+```http
+GET /funds/{symbol}/history
+```
+返回特定基金的净值历史数据。
+
+**参数说明**
+- `symbol`: 基金代码（例如：000001）
+- `start_date`: 开始日期（YYYY-MM-DD），可选
+- `end_date`: 结束日期（YYYY-MM-DD），可选
+
+**响应示例**
+```json
+{
+    "symbol": "000001",
+    "name": "华夏成长混合",
+    "data": [
+        {
+            "date": "2024-01-01",
+            "net_value": 1.2345,
+            "accumulative_value": 3.4567,
+            "daily_growth": 0.56,
+            "dividend": 0.0
+        }
+    ]
+}
+```
+
 ## 错误响应
 所有接口可能返回以下错误响应：
 

@@ -41,6 +41,19 @@ DEBUG=False
 
 # Redis 配置（可选，用于缓存）
 REDIS_URL=redis://localhost:6379/0
+
+# 数据源配置
+# 股票数据源
+STOCK_API_URL=https://api.example.com/stocks
+STOCK_API_KEY=your_stock_api_key
+
+# ETF数据源
+ETF_API_URL=https://api.example.com/etfs
+ETF_API_KEY=your_etf_api_key
+
+# 基金数据源
+FUND_API_URL=https://api.example.com/funds
+FUND_API_KEY=your_fund_api_key
 ```
 
 ### 3. 后端安装

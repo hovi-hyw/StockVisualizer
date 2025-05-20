@@ -28,21 +28,12 @@
 
 ## 系统架构
 
-系统采用前后端分离架构：
+股票数据可视化系统采用前后端分离的架构，主要包括以下几个部分：
 
-```
-+----------------+      +----------------+      +----------------+
-|                |      |                |      |                |
-|  前端应用      | <--> |  后端API服务   | <--> |  数据库        |
-|  (React)       |      |  (FastAPI)     |      |  (PostgreSQL)  |
-|                |      |                |      |                |
-+----------------+      +----------------+      +----------------+
-```
-
-- **前端**：使用React框架构建的单页面应用
-- **后端**：基于FastAPI的RESTful API服务
-- **数据库**：PostgreSQL关系型数据库
-- **部署**：使用Docker容器化部署
+1. **前端**：基于React的单页应用，负责数据展示和用户交互
+2. **后端API**：基于FastAPI的RESTful API，提供数据访问接口
+3. **数据库**：PostgreSQL数据库，存储股票、ETF、基金和指数数据
+4. **数据采集**：定时任务，负责从外部数据源获取最新数据
 
 ## 技术栈
 
@@ -213,6 +204,11 @@ api_router.include_router(stock_router, tags=["stocks"])
 
 - `/api/stocks`：获取股票列表
 - `/api/stocks/{symbol}/kline`：获取股票K线数据
+- `/api/stocks/{symbol}/real-change`：获取股票真实涨跌数据
+- `/api/etfs`：获取ETF列表
+- `/api/etfs/{symbol}/kline`：获取ETF K线数据
+- `/api/funds`：获取基金列表
+- `/api/funds/{symbol}/history`：获取基金净值历史数据
 - `/api/indices`：获取指数列表
 - `/api/indices/{symbol}/kline`：获取指数K线数据
 - `/api/market/hotspots`：获取市场热点
@@ -223,9 +219,88 @@ api_router.include_router(stock_router, tags=["stocks"])
 系统使用PostgreSQL数据库，主要表结构包括：
 
 - `stocks`：股票基本信息
+  - symbol: 股票代码
+  - name: 股票名称
+  - current_price: 当前价格
+  - change_percent: 涨跌幅
+  - volume: 成交量
+  - turnover: 成交额
+  - pe_ratio: 市盈率
+  - market_cap: 市值
+
 - `stock_prices`：股票价格历史数据
+  - symbol: 股票代码
+  - date: 日期
+  - open: 开盘价
+  - high: 最高价
+  - low: 最低价
+  - close: 收盘价
+  - volume: 成交量
+  - turnover: 成交额
+
+- `etfs`：ETF基本信息
+  - symbol: ETF代码
+  - name: ETF名称
+  - current_price: 当前价格
+  - change_percent: 涨跌幅
+  - volume: 成交量
+  - turnover: 成交额
+  - net_value: 净值
+  - premium_rate: 溢价率
+  - tracking_index: 跟踪指数
+
+- `etf_prices`：ETF价格历史数据
+  - symbol: ETF代码
+  - date: 日期
+  - open: 开盘价
+  - high: 最高价
+  - low: 最低价
+  - close: 收盘价
+  - volume: 成交量
+  - turnover: 成交额
+  - net_value: 净值
+
+- `funds`：基金基本信息
+  - symbol: 基金代码
+  - name: 基金名称
+  - type: 基金类型
+  - net_value: 净值
+  - accumulative_value: 累计净值
+  - daily_growth: 日涨跌幅
+  - weekly_growth: 周涨跌幅
+  - monthly_growth: 月涨跌幅
+  - yearly_growth: 年涨跌幅
+  - fund_size: 基金规模
+  - fund_manager: 基金经理
+  - management_fee: 管理费率
+  - custodian_fee: 托管费率
+
+- `fund_net_values`：基金净值历史数据
+  - symbol: 基金代码
+  - date: 日期
+  - net_value: 净值
+  - accumulative_value: 累计净值
+  - daily_growth: 日涨跌幅
+  - dividend: 分红
+
 - `indices`：指数基本信息
+  - symbol: 指数代码
+  - name: 指数名称
+  - current_price: 当前点位
+  - change_percent: 涨跌幅
+  - volume: 成交量
+  - turnover: 成交额
+
 - `index_prices`：指数价格历史数据
+  - symbol: 指数代码
+  - date: 日期
+  - open: 开盘点位
+  - high: 最高点位
+  - low: 最低点位
+  - close: 收盘点位
+  - volume: 成交量
+  - turnover: 成交额
+
 - `market_news`：市场新闻
 
 ## 部署指南
