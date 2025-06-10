@@ -5,6 +5,7 @@
 Authors: hovi.hyw & AI
 Date: 2025-03-12
 更新: 2025-03-20 - 添加热门个股、昨日热门和个股资金流向API
+更新: 2025-06-10 - 添加个股资金流数据API
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -187,6 +188,99 @@ async def get_stock_funds():
         print(f"获取个股资金流向数据失败: {str(e)}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to fetch stock funds data: {str(e)}")
+
+
+@router.get("/{symbol}/fund-flow", response_model=Dict[str, Any])
+async def get_stock_fund_flow(
+        symbol: str
+):
+    """
+    获取个股资金流数据。
+    返回最近100个交易日的个股资金流数据，包括主力、超大单、大单、中单、小单的净额和净占比。
+
+    Args:
+        symbol: 股票代码
+
+    Returns:
+        Dict[str, Any]: 个股资金流数据
+    """
+    try:
+        # 处理股票代码格式
+        market = None
+        code = symbol
+        
+        # 如果股票代码带有市场前缀，则分离市场和代码
+        if symbol.startswith('sh'):
+            market = 'sh'
+            code = symbol[2:]
+        elif symbol.startswith('sz'):
+            market = 'sz'
+            code = symbol[2:]
+        elif symbol.startswith('bj'):
+            market = 'bj'
+            code = symbol[2:]
+        else:
+            # 如果没有市场前缀，默认为上海市场
+            market = 'sh'
+        
+        # 使用akshare获取个股资金流数据
+        try:
+            fund_flow_data = ak.stock_individual_fund_flow(stock=code, market=market)
+        except Exception as e:
+            # 如果默认市场获取失败，尝试其他市场
+            if market == 'sh':
+                try:
+                    fund_flow_data = ak.stock_individual_fund_flow(stock=code, market='sz')
+                    market = 'sz'
+                except:
+                    try:
+                        fund_flow_data = ak.stock_individual_fund_flow(stock=code, market='bj')
+                        market = 'bj'
+                    except Exception as inner_e:
+                        raise HTTPException(status_code=404, detail=f"无法获取股票{code}的资金流数据: {str(inner_e)}")
+            elif market == 'sz':
+                try:
+                    fund_flow_data = ak.stock_individual_fund_flow(stock=code, market='sh')
+                    market = 'sh'
+                except:
+                    try:
+                        fund_flow_data = ak.stock_individual_fund_flow(stock=code, market='bj')
+                        market = 'bj'
+                    except Exception as inner_e:
+                        raise HTTPException(status_code=404, detail=f"无法获取股票{code}的资金流数据: {str(inner_e)}")
+            else:
+                raise HTTPException(status_code=404, detail=f"无法获取股票{code}的资金流数据: {str(e)}")
+        
+        # 转换数据格式
+        result = []
+        for _, row in fund_flow_data.iterrows():
+            result.append({
+                "date": row.get('日期', ''),
+                "close": float(row.get('收盘价', 0)),
+                "change_percent": float(row.get('涨跌幅', 0)),
+                "main_net_inflow": float(row.get('主力净流入-净额', 0)),
+                "main_net_ratio": float(row.get('主力净流入-净占比', 0)),
+                "super_large_net_inflow": float(row.get('超大单净流入-净额', 0)),
+                "super_large_net_ratio": float(row.get('超大单净流入-净占比', 0)),
+                "large_net_inflow": float(row.get('大单净流入-净额', 0)),
+                "large_net_ratio": float(row.get('大单净流入-净占比', 0)),
+                "medium_net_inflow": float(row.get('中单净流入-净额', 0)),
+                "medium_net_ratio": float(row.get('中单净流入-净占比', 0)),
+                "small_net_inflow": float(row.get('小单净流入-净额', 0)),
+                "small_net_ratio": float(row.get('小单净流入-净占比', 0))
+            })
+        
+        return {
+            "symbol": f"{market}{code}",
+            "data": result
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"获取个股资金流数据失败: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stock fund flow data: {str(e)}")
 
 
 @router.get("/{symbol}/real-change", response_model=Dict[str, Any])

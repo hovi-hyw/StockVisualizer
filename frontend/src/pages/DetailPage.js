@@ -11,6 +11,7 @@ import { useParams } from 'react-router-dom';
 import { Spin, message, Button } from 'antd'; // 确认引入了 Button
 import StockKLineChart from '../components/stock/StockKLineChart';
 import IndexKLineChart from '../components/index/IndexKLineChart';
+import StockFundFlowChart from '../components/stock/StockFundFlowChart';
 import { getStockKline, getStockInfo } from '../services/stockService';
 import { getIndexKline, getIndexInfo } from '../services/indexService';
 
@@ -93,6 +94,16 @@ const DetailPage = () => {
           title={`${info?.name} (${symbol}) K线图`} 
           symbol={symbol}
         />
+      )}
+
+      {/* 个股资金流图表 - 只在股票详情页显示 */}
+      {type === 'stock' && (
+        <div style={{ marginTop: '20px' }}>
+          <StockFundFlowChart 
+            symbol={symbol}
+            name={info?.name}
+          />
+        </div>
       )}
 
       {showStockInfo && (
