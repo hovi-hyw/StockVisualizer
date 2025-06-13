@@ -124,15 +124,26 @@ const StockFundFlowChart = ({ symbol, name }) => {
     // 准备当日资金流数据
     const dailyData = {};
     
+    // 计算所有资金流指标当日金额的总和
+    const totalDailyFlow = [];
+    
+    // 初始化总和数组
+    for (let i = 0; i < fundFlowData.data.length; i++) {
+      totalDailyFlow.push(0);
+    }
+    
     indicators.forEach(indicator => {
       const field = indicator.field;
       cumulativeData[field] = [];
       dailyData[field] = [];
       
       let cumulative = 0;
-      fundFlowData.data.forEach(item => {
+      fundFlowData.data.forEach((item, index) => {
         const dailyValue = item[field] / 1_000_000; // 将元转换为百万元
         dailyData[field].push(dailyValue);
+        
+        // 累加到总和中
+        totalDailyFlow[index] += dailyValue;
         
         cumulative += dailyValue;
         cumulativeData[field].push(cumulative);
@@ -222,8 +233,8 @@ const StockFundFlowChart = ({ symbol, name }) => {
         barSeries.push({
           name: `${indicator.label}当日`,
           type: 'bar',
-          xAxisIndex: 1,
-          yAxisIndex: 1,
+          xAxisIndex: 2,
+          yAxisIndex: 2,
           data: dailyData[indicator.field].map(value => value),
           itemStyle: {
             // 根据正负值设置颜色
@@ -234,6 +245,21 @@ const StockFundFlowChart = ({ symbol, name }) => {
         });
       }
     });
+    
+    // 添加资金流总和柱状图
+    const totalFlowSeries = {
+      name: '资金流向总和',
+      type: 'bar',
+      xAxisIndex: 1,
+      yAxisIndex: 1,
+      data: totalDailyFlow,
+      itemStyle: {
+        // 根据正负值设置颜色
+        color: params => {
+          return params.value >= 0 ? '#ff5555' : '#55aa7f';
+        }
+      }
+    };
     
     // 设置图表选项
     const option = {
@@ -249,32 +275,76 @@ const StockFundFlowChart = ({ symbol, name }) => {
         formatter: function(params) {
           let result = params[0].axisValueLabel + '<br/>';
           
-          // 首先添加收盘价
-          const priceItem = params.find(item => item.seriesName === '收盘价');
-          if (priceItem) {
-            result += `${priceItem.marker} ${priceItem.seriesName}: ${priceItem.value.toFixed(2)}<br/>`;
-          }
+          // 判断是哪个图表的tooltip
+          const isPriceChart = params.some(item => item.seriesName === '收盘价');
+          const isTotalFlowChart = params.some(item => item.seriesName === '资金流向总和');
+          const isDetailFlowChart = !isPriceChart && !isTotalFlowChart;
           
-          // 然后添加资金流指标
-          params.forEach(param => {
-            if (param.seriesName !== '收盘价' && !param.seriesName.includes('当日')) {
-              const indicator = indicators.find(ind => ind.label === param.seriesName);
-              if (indicator) {
-                const index = param.dataIndex;
-                const originalValue = cumulativeData[indicator.field][index];
-                // 获取当天的资金流金额
-                const dailyValue = dailyData[indicator.field][index];
-                result += `${param.marker} ${param.seriesName}累计净额: ${originalValue.toFixed(2)}百万<br/>`;
-                result += `${param.marker} ${param.seriesName}当日净额: ${dailyValue.toFixed(2)}百万<br/>`;
+          if (isPriceChart) {
+            // 收盘价折线图tooltip
+            // 添加收盘价
+            const priceItem = params.find(item => item.seriesName === '收盘价');
+            if (priceItem) {
+              result += `${priceItem.marker} ${priceItem.seriesName}: ${priceItem.value.toFixed(2)}<br/>`;
+            }
+            
+            // 添加资金流指标的累计净额
+            params.forEach(param => {
+              if (param.seriesName !== '收盘价' && !param.seriesName.includes('当日')) {
+                const indicator = indicators.find(ind => ind.label === param.seriesName);
+                if (indicator) {
+                  const index = param.dataIndex;
+                  const originalValue = cumulativeData[indicator.field][index];
+                  result += `${param.marker} ${param.seriesName}累计净额: ${originalValue.toFixed(2)}百万<br/>`;
+                }
+              }
+            });
+          } else if (isTotalFlowChart) {
+            // 资金流向总和柱状图tooltip
+            const totalFlowItem = params.find(item => item.seriesName === '资金流向总和');
+            if (totalFlowItem) {
+              const value = totalFlowItem.value;
+              const color = value >= 0 ? 'red' : 'green';
+              const prefix = value >= 0 ? '+' : '';
+              result += `${totalFlowItem.marker} <span style="color:${color}">${totalFlowItem.seriesName}: ${prefix}${value.toFixed(2)}百万</span><br/>`;
+              
+              // 添加涨跌幅
+              const dataIndex = totalFlowItem.dataIndex;
+              if (dataIndex > 0) {
+                const currentPrice = closePrices[dataIndex];
+                const prevPrice = closePrices[dataIndex - 1];
+                const changePercent = ((currentPrice - prevPrice) / prevPrice * 100).toFixed(2);
+                const changeColor = changePercent >= 0 ? 'red' : 'green';
+                result += `<span style="color:${changeColor}">涨跌幅: ${changePercent}%</span><br/>`;
               }
             }
-          });
+          } else if (isDetailFlowChart) {
+            // 各指标当日资金流柱状图tooltip
+            params.forEach(param => {
+              if (param.seriesName.includes('当日')) {
+                const value = param.value;
+                const color = value >= 0 ? 'red' : 'green';
+                const prefix = value >= 0 ? '+' : '';
+                result += `${param.marker} <span style="color:${color}">${param.seriesName}: ${prefix}${value.toFixed(2)}百万</span><br/>`;
+              }
+            });
+            
+            // 添加涨跌幅
+            const dataIndex = params[0].dataIndex;
+            if (dataIndex > 0) {
+              const currentPrice = closePrices[dataIndex];
+              const prevPrice = closePrices[dataIndex - 1];
+              const changePercent = ((currentPrice - prevPrice) / prevPrice * 100).toFixed(2);
+              const changeColor = changePercent >= 0 ? 'red' : 'green';
+              result += `<span style="color:${changeColor}">涨跌幅: ${changePercent}%</span><br/>`;
+            }
+          }
           
           return result;
         }
       },
       legend: {
-        data: ['收盘价', ...selectedIndicators.map(key => indicators.find(ind => ind.key === key).label)],
+        data: ['收盘价', '资金流向总和', ...selectedIndicators.map(key => indicators.find(ind => ind.key === key).label)],
         top: 30
       },
       grid: [
@@ -282,14 +352,21 @@ const StockFundFlowChart = ({ symbol, name }) => {
           left: '3%',
           right: '4%',
           top: '15%',
-          height: '50%',
+          height: '45%', // 增加收盘价折线图高度50%
           containLabel: true
         },
         {
           left: '3%',
           right: '4%',
-          top: '70%',
-          height: '20%',
+          top: '65%',
+          height: '15%',
+          containLabel: true
+        },
+        {
+          left: '3%',
+          right: '4%',
+          top: '85%',
+          height: '10%',
           containLabel: true
         }
       ],
@@ -317,6 +394,18 @@ const StockFundFlowChart = ({ symbol, name }) => {
             }
           },
           gridIndex: 1
+        },
+        {
+          type: 'category',
+          data: dates,
+          boundaryGap: true,
+          axisLine: { onZero: false },
+          axisLabel: {
+            formatter: function(value) {
+              return value.substring(5); // 只显示月-日
+            }
+          },
+          gridIndex: 2
         }
       ],
       yAxis: [
@@ -340,26 +429,43 @@ const StockFundFlowChart = ({ symbol, name }) => {
           axisLabel: {
             formatter: '{value}百万'
           },
-          gridIndex: 1
+          gridIndex: 1,
+          name: '资金流向总和',
+          nameLocation: 'end',
+          nameGap: 10,
+          nameTextStyle: {
+            fontSize: 12
+          }
+        },
+        {
+          type: 'value',
+          scale: true,
+          splitLine: {
+            show: true
+          },
+          axisLabel: {
+            formatter: '{value}百万'
+          },
+          gridIndex: 2
         }
       ],
       dataZoom: [
         {
           type: 'inside',
-          xAxisIndex: [0, 1], // 同时控制两个图表
+          xAxisIndex: [0, 1, 2], // 同时控制三个图表
           start: 0,
           end: 100
         },
         {
           show: true,
           type: 'slider',
-          xAxisIndex: [0, 1], // 同时控制两个图表
+          xAxisIndex: [0, 1, 2], // 同时控制三个图表
           bottom: '2%',
           start: 0,
           end: 100
         }
       ],
-      series: [...series, ...barSeries]
+      series: [...series, totalFlowSeries, ...barSeries]
     };
     
     chart.setOption(option, true);
@@ -393,10 +499,10 @@ const StockFundFlowChart = ({ symbol, name }) => {
             </Row>
             <div
               ref={chartRef}
-              style={{ width: '100%', height: '500px' }}
+              style={{ width: '100%', height: '750px' }} // 增加图表容器高度
             />
             <div style={{ marginTop: '8px', fontSize: '12px', color: '#999', textAlign: 'center' }}>
-              注：上图中资金流数据为累计净额（单位：百万元），已按比例缩放以便与价格对比；下图为当日资金流金额（单位：百万元），红色为净流入，绿色为净流出
+              注：顶部图表中资金流数据为累计净额（单位：百万元），已按比例缩放以便与价格对比；中间图表为当日资金流总和（单位：百万元）；底部图表为各类资金当日流向金额（单位：百万元），红色为净流入，绿色为净流出
             </div>
           </>
         )}
