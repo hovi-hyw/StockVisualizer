@@ -52,7 +52,7 @@ const StockFundFlowChart = ({ symbol, name }) => {
   
   // 资金流指标配置
   const indicators = [
-    { key: 'main', label: '主力', field: 'main_net_inflow', color: '#FF5722' },
+    { key: 'main', label: '总和', field: 'main_net_inflow', color: '#FF5722' },
     { key: 'super_large', label: '超大单', field: 'super_large_net_inflow', color: '#E91E63' },
     { key: 'large', label: '大单', field: 'large_net_inflow', color: '#9C27B0' },
     { key: 'medium', label: '中单', field: 'medium_net_inflow', color: '#3F51B5' },
@@ -229,7 +229,8 @@ const StockFundFlowChart = ({ symbol, name }) => {
     const barSeries = [];
     selectedIndicators.forEach(key => {
       const indicator = indicators.find(ind => ind.key === key);
-      if (indicator) {
+      // 排除总和指标，不在柱状图中显示
+      if (indicator && indicator.key !== 'main') {
         barSeries.push({
           name: `${indicator.label}当日`,
           type: 'bar',
@@ -248,7 +249,7 @@ const StockFundFlowChart = ({ symbol, name }) => {
     
     // 添加资金流总和柱状图
     const totalFlowSeries = {
-      name: '资金流向总和',
+      name: '大资金流向总和',
       type: 'bar',
       xAxisIndex: 1,
       yAxisIndex: 1,
@@ -277,7 +278,7 @@ const StockFundFlowChart = ({ symbol, name }) => {
           
           // 判断是哪个图表的tooltip
           const isPriceChart = params.some(item => item.seriesName === '收盘价');
-          const isTotalFlowChart = params.some(item => item.seriesName === '资金流向总和');
+          const isTotalFlowChart = params.some(item => item.seriesName === '大资金流向总和');
           const isDetailFlowChart = !isPriceChart && !isTotalFlowChart;
           
           if (isPriceChart) {
@@ -300,8 +301,8 @@ const StockFundFlowChart = ({ symbol, name }) => {
               }
             });
           } else if (isTotalFlowChart) {
-            // 资金流向总和柱状图tooltip
-            const totalFlowItem = params.find(item => item.seriesName === '资金流向总和');
+            // 大资金流向总和柱状图tooltip
+            const totalFlowItem = params.find(item => item.seriesName === '大资金流向总和');
             if (totalFlowItem) {
               const value = totalFlowItem.value;
               const color = value >= 0 ? 'red' : 'green';
@@ -322,10 +323,14 @@ const StockFundFlowChart = ({ symbol, name }) => {
             // 各指标当日资金流柱状图tooltip
             params.forEach(param => {
               if (param.seriesName.includes('当日')) {
-                const value = param.value;
-                const color = value >= 0 ? 'red' : 'green';
-                const prefix = value >= 0 ? '+' : '';
-                result += `${param.marker} <span style="color:${color}">${param.seriesName}: ${prefix}${value.toFixed(2)}百万</span><br/>`;
+                // 确保不显示总和当日的信息
+                const seriesName = param.seriesName;
+                if (!seriesName.includes('总和当日')) {
+                  const value = param.value;
+                  const color = value >= 0 ? 'red' : 'green';
+                  const prefix = value >= 0 ? '+' : '';
+                  result += `${param.marker} <span style="color:${color}">${param.seriesName}: ${prefix}${value.toFixed(2)}百万</span><br/>`;
+                }
               }
             });
             
@@ -344,7 +349,7 @@ const StockFundFlowChart = ({ symbol, name }) => {
         }
       },
       legend: {
-        data: ['收盘价', '资金流向总和', ...selectedIndicators.map(key => indicators.find(ind => ind.key === key).label)],
+        data: ['收盘价', '大资金流向总和', ...selectedIndicators.map(key => indicators.find(ind => ind.key === key).label)],
         top: 30
       },
       grid: [
@@ -430,7 +435,7 @@ const StockFundFlowChart = ({ symbol, name }) => {
             formatter: '{value}百万'
           },
           gridIndex: 1,
-          name: '资金流向总和',
+          name: '大资金流向总和',
           nameLocation: 'end',
           nameGap: 10,
           nameTextStyle: {
